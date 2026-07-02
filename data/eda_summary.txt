@@ -1,0 +1,26 @@
+EDA SUMMARY
+==================================================
+Total Records    : 48204
+Features         : ['hour', 'day_of_week', 'month', 'is_weekend', 'is_peak_hour', 'is_holiday', 'traffic_volume', 'avg_speed', 'travel_time', 'temp_celsius', 'rain_1h', 'snow_1h', 'clouds_all', 'weather_encoded', 'congestion_level', 'cong_label', 'weather_label']
+
+Traffic Volume Stats:
+  Min  : 0
+  Max  : 7280
+  Mean : 3259.8
+  Std  : 1986.9
+
+Congestion Distribution:
+  Low     : 17513 (36.3%)
+  Medium  : 13734 (28.5%)
+  High    : 16957 (35.2%)
+
+Correlations with traffic_volume:
+  avg_speed           : -0.9889
+  travel_time         : +0.9803
+  is_peak_hour        : +0.4540
+  hour                : +0.3524
+  is_weekend          : -0.1434
+  temp_celsius        : +0.1303
+  day_of_week         : -0.1013
+  weather_encoded     : -0.0368
+  rain_1h             : +0.0047

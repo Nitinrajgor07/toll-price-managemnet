@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Login – AI Toll Management Platform</title>
+<meta name="description" content="Secure login portal for NHAI AI Toll Management Enterprise Dashboard.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+<style>
+:root {
+  --accent: #4f7cff;
+  --accent2: #7c5cff;
+  --green: #22c55e;
+  --red: #ef4444;
+  --yellow: #eab308;
+  --text: #0f172a;
+  --muted: #64748b;
+  --border: rgba(255,255,255,0.55);
+  --card-bg: rgba(255,255,255,0.55);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: stretch;
+  background: #f0f4ff;
+  overflow: hidden;
+}
+
+/* Page entrance */
+@keyframes fadeInPage { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.auth-layout { animation: fadeInPage 0.5s ease both; }
+
+/* Background Blobs */
+.bg-blobs {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden;
+  background: linear-gradient(135deg, #f0f4ff 0%, #faf8ff 100%);
+  pointer-events: none;
+}
+.blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(120px); opacity: 0.18;
+  animation: float 25s infinite alternate ease-in-out;
+}
+.blob-1 { width: 600px; height: 600px; background: #4F7CFF; top: -200px; left: -200px; }
+.blob-2 { width: 700px; height: 700px; background: #7C5CFF; bottom: -250px; right: -250px; animation-delay: 4s; }
+.blob-3 { width: 400px; height: 400px; background: #22C55E; top: 40%; left: 35%; animation-delay: 8s; }
+@keyframes float {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(40px,-30px) scale(1.1); }
+  100% { transform: translate(-20px,40px) scale(0.93); }
+}
+
+/* Layout */
+.auth-layout {
+  display: flex;
+  width: 100%;
+  min-height: 100vh;
+  position: relative;
+  z-index: 1;
+}
+
+/* Left Branding Panel */
+.brand-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 60px;
+  background: linear-gradient(145deg, rgba(79,124,255,0.08) 0%, rgba(124,92,255,0.06) 100%);
+  backdrop-filter: blur(12px);
+  border-right: 1px solid rgba(255,255,255,0.3);
+  display: none;
+  overflow: hidden;
+}
+@media (min-width: 960px) { .brand-panel { display: flex; } }
+
+.brand-logo {
+  width: 56px; height: 56px; border-radius: 16px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; margin-bottom: 28px;
+  box-shadow: 0 12px 30px rgba(79,124,255,0.3);
+}
+.brand-logo svg { width: 28px; height: 28px; }
+.brand-title {
+  font-size: 2rem; font-weight: 900; color: var(--text);
+  letter-spacing: -0.8px; line-height: 1.2; margin-bottom: 10px;
+}
+.brand-subtitle {
+  font-size: 1rem; color: var(--muted); font-weight: 500; margin-bottom: 40px;
+}
+.feature-list { display: flex; flex-direction: column; gap: 20px; }
+.feature-item {
+  display: flex; align-items: flex-start; gap: 16px;
+  animation: fadeInUp 0.5s ease both;
+}
+.feature-item:nth-child(1) { animation-delay: 0.1s; }
+.feature-item:nth-child(2) { animation-delay: 0.2s; }
+.feature-item:nth-child(3) { animation-delay: 0.3s; }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+.feature-icon {
+  width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.2rem;
+}
+.feature-icon.blue  { background: rgba(79,124,255,0.1); color: var(--accent); }
+.feature-icon.green { background: rgba(34,197,94,0.1);  color: var(--green);  }
+.feature-icon.purple{ background: rgba(124,92,255,0.1); color: var(--accent2);}
+.feature-icon svg { width: 20px; height: 20px; }
+.feature-text h4 { font-size: 0.9rem; font-weight: 700; color: var(--text); margin-bottom: 2px; }
+.feature-text p  { font-size: 0.78rem; color: var(--muted); line-height: 1.5; }
+
+.brand-footer {
+  margin-top: auto; padding-top: 28px;
+  display: flex; align-items: center; gap: 10px;
+}
+.status-dot { width: 8px; height: 8px; background: var(--green); border-radius: 50%; animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;box-shadow:0 0 0 0 rgba(34,197,94,0.4)} 50%{opacity:0.7;box-shadow:0 0 0 6px rgba(34,197,94,0)} }
+.brand-footer span { font-size: 0.78rem; color: var(--muted); font-weight: 600; }
+
+/* ── Animated Road ── */
+.road-scene {
+  margin-top: 32px;
+  position: relative;
+  height: 90px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #c8e6c9 0%, #a5d6a7 40%, #6abf69 40%, #6abf69 100%);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+}
+.road-surface {
+  position: absolute;
+  bottom: 0; left: 0; right: 0;
+  height: 54px;
+  background: #37474f;
+  border-radius: 0;
+}
+.road-line {
+  position: absolute;
+  bottom: 22px; left: 0;
+  height: 4px; width: 60px;
+  background: #fff;
+  border-radius: 2px;
+  animation: roadLines 1.4s linear infinite;
+  opacity: 0.7;
+}
+.road-line:nth-child(2) { animation-delay: -0.47s; }
+.road-line:nth-child(3) { animation-delay: -0.94s; }
+@keyframes roadLines {
+  0%   { transform: translateX(160%); opacity: 0.7; }
+  5%   { opacity: 0.7; }
+  90%  { opacity: 0.7; }
+  100% { transform: translateX(-80px); opacity: 0; }
+}
+
+/* Cars SVG moving */
+.car { position: absolute; bottom: 26px; animation: driveCar linear infinite; }
+.car.car-1 { animation-duration: 3.8s; animation-delay: 0s; }
+.car.car-2 { animation-duration: 5.2s; animation-delay: -1.8s; bottom: 36px; }
+.car.car-3 { animation-duration: 4.5s; animation-delay: -3s; }
+@keyframes driveCar {
+  0%   { transform: translateX(420px); }
+  100% { transform: translateX(-120px); }
+}
+
+/* Right Login Panel */
+.login-panel {
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 40px;
+  background: rgba(255,255,255,0.6);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border-left: 1px solid rgba(255,255,255,0.5);
+  animation: slideInPanel 0.55s cubic-bezier(0.16,1,0.3,1) both;
+}
+@keyframes slideInPanel {
+  from { opacity: 0; transform: translateX(24px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+@media (min-width: 960px) { .login-panel { min-width: 440px; } }
+
+.login-header { margin-bottom: 36px; }
+.login-logo-sm {
+  width: 44px; height: 44px; border-radius: 12px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; margin-bottom: 20px;
+  box-shadow: 0 8px 20px rgba(79,124,255,0.25);
+  display: none;
+}
+@media (max-width: 959px) { .login-logo-sm { display: flex; } }
+.login-logo-sm svg { width: 22px; height: 22px; }
+.login-title { font-size: 1.65rem; font-weight: 800; color: var(--text); letter-spacing: -0.5px; margin-bottom: 6px; }
+.login-subtitle { font-size: 0.85rem; color: var(--muted); font-weight: 500; }
+
+/* Alert / Flash */
+.flash-alert {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-radius: 12px; margin-bottom: 20px;
+  font-size: 0.82rem; font-weight: 600;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
+.flash-alert.danger  { background: rgba(239,68,68,0.1);  color: #dc2626; border: 1px solid rgba(239,68,68,0.2);  }
+.flash-alert.success { background: rgba(34,197,94,0.1);  color: #16a34a; border: 1px solid rgba(34,197,94,0.2);  }
+.flash-alert.warning { background: rgba(234,179,8,0.1);  color: #ca8a04; border: 1px solid rgba(234,179,8,0.2);  }
+.flash-alert.info    { background: rgba(79,124,255,0.1); color: var(--accent); border: 1px solid rgba(79,124,255,0.2); }
+.flash-alert svg { width: 16px; height: 16px; flex-shrink: 0; }
+
+/* Form */
+.form-group { margin-bottom: 18px; }
+.form-label { display: block; font-size: 0.78rem; font-weight: 700; color: var(--muted); margin-bottom: 7px; letter-spacing: 0.3px; text-transform: uppercase; }
+.form-control {
+  width: 100%; padding: 12px 14px; border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.7);
+  color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 0.88rem; font-weight: 500;
+  outline: none; transition: all 0.2s ease;
+}
+.form-control:focus {
+  border-color: var(--accent);
+  background: #fff;
+  box-shadow: 0 0 0 4px rgba(79,124,255,0.12);
+}
+.form-control::placeholder { color: #94a3b8; }
+
+.input-wrap { position: relative; }
+.input-wrap .form-control { padding-left: 42px; }
+.input-wrap .input-icon {
+  position: absolute; left: 13px; top: 50%;
+  transform: translateY(-50%); color: #94a3b8;
+  width: 16px; height: 16px; pointer-events: none;
+}
+.input-wrap .toggle-pass {
+  position: absolute; right: 13px; top: 50%;
+  transform: translateY(-50%); background: none; border: none;
+  color: #94a3b8; cursor: pointer; padding: 2px;
+  width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+  transition: color 0.2s;
+}
+.input-wrap .toggle-pass:hover { color: var(--accent); }
+.input-wrap .toggle-pass svg { width: 16px; height: 16px; }
+
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+
+/* Remember & Forgot row */
+.form-extras {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 22px; margin-top: -4px;
+}
+.remember-label {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; font-weight: 600; color: var(--muted); cursor: pointer;
+}
+.remember-label input[type="checkbox"] { accent-color: var(--accent); width: 15px; height: 15px; }
+.forgot-link {
+  font-size: 0.8rem; font-weight: 700;
+  color: var(--accent); text-decoration: none;
+  transition: opacity 0.2s;
+}
+.forgot-link:hover { opacity: 0.75; }
+
+/* Submit Button */
+.btn-submit {
+  width: 100%; padding: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border: none; border-radius: 14px;
+  font-family: 'Inter', sans-serif; font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; letter-spacing: 0.3px;
+  transition: all 0.25s ease;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 6px 20px rgba(79,124,255,0.3);
+  position: relative; overflow: hidden;
+}
+.btn-submit::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+  opacity: 0; transition: opacity 0.2s;
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(79,124,255,0.4); }
+.btn-submit:hover::after { opacity: 1; }
+.btn-submit:active { transform: translateY(0); }
+.btn-submit svg { width: 18px; height: 18px; }
+
+/* Divider */
+.divider {
+  display: flex; align-items: center; gap: 12px;
+  margin: 22px 0; color: var(--muted); font-size: 0.75rem; font-weight: 600;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: rgba(0,0,0,0.07);
+}
+
+/* Register Link */
+.register-link-row {
+  text-align: center; font-size: 0.82rem; color: var(--muted); font-weight: 500;
+}
+.register-link-row a { color: var(--accent); font-weight: 700; text-decoration: none; }
+.register-link-row a:hover { text-decoration: underline; }
+
+/* Role Selector */
+.role-selector {
+  display: flex; gap: 8px; margin-bottom: 18px;
+}
+.role-option {
+  flex: 1; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  padding: 10px 8px; border-radius: 12px; border: 2px solid rgba(0,0,0,0.07);
+  cursor: pointer; background: rgba(255,255,255,0.5);
+  transition: all 0.2s ease; user-select: none;
+}
+.role-option:hover { border-color: rgba(79,124,255,0.3); background: rgba(79,124,255,0.04); }
+.role-option.selected {
+  border-color: var(--accent); background: rgba(79,124,255,0.08);
+  box-shadow: 0 0 0 3px rgba(79,124,255,0.1);
+}
+.role-option input[type="radio"] { display: none; }
+.role-option-icon { width: 28px; height: 28px; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+.role-option-icon svg { width: 14px; height: 14px; }
+.role-option span { font-size: 0.7rem; font-weight: 700; color: var(--muted); text-align: center; }
+.role-option.selected span { color: var(--accent); }
+.role-option.selected .role-option-icon { background: rgba(79,124,255,0.12); color: var(--accent); }
+
+/* Spinner */
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+</style>
+</head>
+<body>
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<div class="auth-layout">
+
+  <!-- Left Branding Panel (desktop only) -->
+  <div class="brand-panel">
+    <div>
+      <div class="brand-logo"><i data-lucide="cpu"></i></div>
+      <h1 class="brand-title">AI Toll Management<br>Platform</h1>
+      <p class="brand-subtitle">Enterprise Dashboard — Powered by Machine Learning</p>
+
+      <div class="feature-list">
+        <div class="feature-item">
+          <div class="feature-icon blue"><i data-lucide="brain-circuit"></i></div>
+          <div class="feature-text">
+            <h4>AI-Powered Pricing</h4>
+            <p>Random Forest model with 92%+ accuracy for real-time congestion prediction and dynamic toll pricing.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon green"><i data-lucide="activity"></i></div>
+          <div class="feature-text">
+            <h4>Live Traffic Intelligence</h4>
+            <p>Real-time monitoring across 200+ toll nodes with automated surge pricing triggers.</p>
+          </div>
+        </div>
+        <div class="feature-item">
+          <div class="feature-icon purple"><i data-lucide="shield-check"></i></div>
+          <div class="feature-text">
+            <h4>Role-Based Access Control</h4>
+            <p>Three-tier security model — Main Admin, Company Admin, and Operator access levels.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Animated Road Scene -->
+      <div class="road-scene">
+        <div class="road-surface"></div>
+        <div class="road-line"></div>
+        <div class="road-line"></div>
+        <div class="road-line"></div>
+        <!-- Car 1 – blue sedan -->
+        <svg class="car car-1" width="48" height="22" viewBox="0 0 48 22" fill="none">
+          <rect x="6" y="8" width="36" height="12" rx="4" fill="#4f7cff"/>
+          <rect x="12" y="4" width="22" height="10" rx="3" fill="#7c5cff"/>
+          <rect x="14" y="6" width="8" height="6" rx="1" fill="rgba(255,255,255,0.6)"/>
+          <rect x="24" y="6" width="8" height="6" rx="1" fill="rgba(255,255,255,0.6)"/>
+          <circle cx="13" cy="20" r="4" fill="#1e293b"/><circle cx="35" cy="20" r="4" fill="#1e293b"/>
+          <circle cx="13" cy="20" r="2" fill="#475569"/><circle cx="35" cy="20" r="2" fill="#475569"/>
+          <rect x="40" y="12" width="4" height="3" rx="1" fill="#fbbf24"/>
+          <rect x="4" y="12" width="3" height="3" rx="1" fill="#ef4444" opacity="0.7"/>
+        </svg>
+        <!-- Car 2 – dark truck -->
+        <svg class="car car-2" width="60" height="28" viewBox="0 0 60 28" fill="none">
+          <rect x="2" y="10" width="56" height="14" rx="3" fill="#334155"/>
+          <rect x="8" y="5" width="38" height="12" rx="2" fill="#475569"/>
+          <rect x="10" y="7" width="10" height="7" rx="1" fill="rgba(255,255,255,0.4)"/>
+          <rect x="22" y="7" width="10" height="7" rx="1" fill="rgba(255,255,255,0.4)"/>
+          <circle cx="14" cy="25" r="5" fill="#1e293b"/><circle cx="46" cy="25" r="5" fill="#1e293b"/>
+          <circle cx="14" cy="25" r="2.5" fill="#475569"/><circle cx="46" cy="25" r="2.5" fill="#475569"/>
+          <rect x="52" y="14" width="5" height="3" rx="1" fill="#fbbf24" opacity="0.9"/>
+        </svg>
+        <!-- Car 3 – green hatchback -->
+        <svg class="car car-3" width="44" height="20" viewBox="0 0 44 20" fill="none">
+          <rect x="4" y="7" width="36" height="11" rx="4" fill="#22c55e"/>
+          <rect x="10" y="3" width="20" height="9" rx="2" fill="#16a34a"/>
+          <rect x="12" y="5" width="7" height="5" rx="1" fill="rgba(255,255,255,0.55)"/>
+          <rect x="21" y="5" width="7" height="5" rx="1" fill="rgba(255,255,255,0.55)"/>
+          <circle cx="11" cy="18" r="4" fill="#1e293b"/><circle cx="33" cy="18" r="4" fill="#1e293b"/>
+          <circle cx="11" cy="18" r="2" fill="#475569"/><circle cx="33" cy="18" r="2" fill="#475569"/>
+          <rect x="38" y="11" width="4" height="2.5" rx="1" fill="#fbbf24"/>
+        </svg>
+      </div>
+    </div>
+
+    <div class="brand-footer">
+      <div class="status-dot"></div>
+      <span>All systems operational &mdash; NHAI Central Network</span>
+    </div>
+  </div>
+
+  <!-- Right Login Panel -->
+  <div class="login-panel">
+    <div class="login-header">
+      <div class="login-logo-sm"><i data-lucide="cpu"></i></div>
+      <h2 class="login-title">Welcome back</h2>
+      <p class="login-subtitle">Sign in to your AI Toll Management account</p>
+    </div>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        {% for category, message in messages %}
+          <div class="flash-alert {{ category }}">
+            {% if category == 'danger' %}<i data-lucide="alert-circle"></i>
+            {% elif category == 'success' %}<i data-lucide="check-circle"></i>
+            {% elif category == 'warning' %}<i data-lucide="alert-triangle"></i>
+            {% else %}<i data-lucide="info"></i>{% endif %}
+            <span>{{ message }}</span>
+          </div>
+        {% endfor %}
+      {% endif %}
+    {% endwith %}
+
+    <form method="POST" action="/login" id="loginForm">
+
+      <!-- Role Selector -->
+      <div style="margin-bottom: 6px;">
+        <label class="form-label">Sign in as</label>
+      </div>
+      <div class="role-selector" id="roleSelector">
+        <label class="role-option selected" id="role-main">
+          <input type="radio" name="role_hint" value="main_admin" checked>
+          <div class="role-option-icon"><i data-lucide="shield"></i></div>
+          <span>Main Admin</span>
+        </label>
+        <label class="role-option" id="role-company">
+          <input type="radio" name="role_hint" value="company_admin">
+          <div class="role-option-icon"><i data-lucide="building-2"></i></div>
+          <span>Company Admin</span>
+        </label>
+        <label class="role-option" id="role-worker">
+          <input type="radio" name="role_hint" value="worker">
+          <div class="role-option-icon"><i data-lucide="hard-hat"></i></div>
+          <span>Operator</span>
+        </label>
+      </div>
+
+      <!-- Email -->
+      <div class="form-group">
+        <label class="form-label" for="email">Email Address</label>
+        <div class="input-wrap">
+          <i data-lucide="mail" class="input-icon"></i>
+          <input class="form-control" type="email" id="email" name="email" placeholder="you@company.gov.in" required autocomplete="email">
+        </div>
+      </div>
+
+      <!-- Password -->
+      <div class="form-group">
+        <label class="form-label" for="password">Password</label>
+        <div class="input-wrap">
+          <i data-lucide="lock" class="input-icon"></i>
+          <input class="form-control" type="password" id="password" name="password" placeholder="Enter your password" required autocomplete="current-password" style="padding-right: 44px;">
+          <button type="button" class="toggle-pass" onclick="togglePassword()" id="togglePassBtn" title="Show/hide password">
+            <i data-lucide="eye" id="eyeIcon"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- Extras -->
+      <div class="form-extras">
+        <label class="remember-label">
+          <input type="checkbox" name="remember"> Remember me
+        </label>
+        <a href="/forgot-password" class="forgot-link">Forgot password?</a>
+      </div>
+
+      <!-- Submit -->
+      <button type="submit" class="btn-submit" id="loginBtn">
+        <i data-lucide="log-in"></i>
+        <span>Sign In to Dashboard</span>
+      </button>
+    </form>
+
+    <div class="divider">or</div>
+
+    <div class="register-link-row">
+      New company? <a href="/register">Register your organization</a>
+    </div>
+
+    <div style="margin-top: 36px; padding-top: 24px; border-top: 1px solid rgba(0,0,0,0.06); text-align: center;">
+      <p style="font-size: 0.72rem; color: var(--muted); line-height: 1.6;">
+        &copy; 2024 NHAI AI Toll Management Platform<br>
+        National Highways Authority of India &mdash; Enterprise Division
+      </p>
+    </div>
+  </div>
+</div>
+
+<script>
+lucide.createIcons();
+
+// Role selector
+document.querySelectorAll('.role-option').forEach(label => {
+  label.addEventListener('click', () => {
+    document.querySelectorAll('.role-option').forEach(l => l.classList.remove('selected'));
+    label.classList.add('selected');
+  });
+});
+
+// Password toggle
+function togglePassword() {
+  const input = document.getElementById('password');
+  const icon  = document.getElementById('eyeIcon');
+  if (input.type === 'password') {
+    input.type = 'text';
+    icon.setAttribute('data-lucide', 'eye-off');
+  } else {
+    input.type = 'password';
+    icon.setAttribute('data-lucide', 'eye');
+  }
+  lucide.createIcons();
+}
+
+// Submit loading state
+document.getElementById('loginForm').addEventListener('submit', function() {
+  const btn = document.getElementById('loginBtn');
+  btn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="spin"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg><span>Signing in...</span>';
+  btn.disabled = true;
+});
+</script>
+</body>
+</html>

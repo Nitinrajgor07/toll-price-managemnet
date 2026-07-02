@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Register Company – AI Toll Management Platform</title>
+<meta name="description" content="Register your company on the NHAI AI Toll Management Enterprise Platform.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+<script src="https://unpkg.com/lucide@0.400.0/dist/umd/lucide.min.js"></script>
+<style>
+:root {
+  --accent: #4f7cff;
+  --accent2: #7c5cff;
+  --green: #22c55e;
+  --red: #ef4444;
+  --text: #0f172a;
+  --muted: #64748b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f0f4ff 0%, #faf8ff 100%);
+  padding: 40px 20px;
+}
+@keyframes fadeInPage { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+.register-card { animation: fadeInPage 0.5s ease both; }
+.bg-blobs {
+  position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none;
+}
+.blob {
+  position: absolute; border-radius: 50%;
+  filter: blur(120px); opacity: 0.15;
+  animation: float 25s infinite alternate ease-in-out;
+}
+.blob-1 { width: 600px; height: 600px; background: #4F7CFF; top: -250px; left: -200px; }
+.blob-2 { width: 500px; height: 500px; background: #7C5CFF; bottom: -200px; right: -150px; animation-delay: 5s; }
+.blob-3 { width: 350px; height: 350px; background: #22C55E; top: 30%; right: 15%; animation-delay: 10s; }
+@keyframes float {
+  0%   { transform: translate(0,0) scale(1); }
+  50%  { transform: translate(35px,-25px) scale(1.08); }
+  100% { transform: translate(-20px,35px) scale(0.93); }
+}
+
+/* Main Card */
+.register-card {
+  position: relative; z-index: 1;
+  width: 100%; max-width: 620px;
+  background: rgba(255,255,255,0.65);
+  backdrop-filter: blur(28px);
+  -webkit-backdrop-filter: blur(28px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 28px;
+  padding: 44px 48px;
+  box-shadow: 0 24px 60px rgba(0,0,0,0.07), 0 4px 16px rgba(0,0,0,0.03);
+}
+@media (max-width: 640px) { .register-card { padding: 32px 24px; border-radius: 20px; } }
+
+/* Animated Road */
+.road-scene-sm {
+  margin-bottom: 28px;
+  position: relative; height: 70px; border-radius: 14px; overflow: hidden;
+  background: linear-gradient(180deg, #c8e6c9 0%, #a5d6a7 38%, #6abf69 38%, #6abf69 100%);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
+}
+.road-surface-sm {
+  position: absolute; bottom: 0; left: 0; right: 0; height: 42px; background: #37474f;
+}
+.road-line-sm {
+  position: absolute; bottom: 16px; left: 0;
+  height: 3px; width: 46px; background: #fff; border-radius: 2px;
+  animation: roadLinesSm 1.3s linear infinite; opacity: 0.7;
+}
+.road-line-sm:nth-child(3) { animation-delay: -0.43s; }
+.road-line-sm:nth-child(4) { animation-delay: -0.87s; }
+@keyframes roadLinesSm {
+  0%   { transform: translateX(640px); opacity: 0.7; }
+  5%   { opacity: 0.7; } 90% { opacity: 0.7; }
+  100% { transform: translateX(-60px); opacity: 0; }
+}
+.car-sm { position: absolute; bottom: 20px; animation: driveSm linear infinite; }
+.car-sm.c1 { animation-duration: 3.5s; animation-delay: 0s; }
+.car-sm.c2 { animation-duration: 5s;   animation-delay: -2s; bottom: 28px; }
+@keyframes driveSm {
+  0%   { transform: translateX(640px); }
+  100% { transform: translateX(-80px); }
+}
+
+/* Header */
+.card-header-area { text-align: center; margin-bottom: 36px; }
+.logo-wrap {
+  width: 52px; height: 52px; border-radius: 14px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; margin: 0 auto 18px;
+  box-shadow: 0 10px 25px rgba(79,124,255,0.3);
+}
+.logo-wrap svg { width: 26px; height: 26px; }
+.card-title { font-size: 1.5rem; font-weight: 800; color: var(--text); letter-spacing: -0.5px; margin-bottom: 6px; }
+.card-subtitle { font-size: 0.83rem; color: var(--muted); font-weight: 500; }
+
+/* Step Progress */
+.step-progress {
+  display: flex; align-items: center; justify-content: center;
+  gap: 0; margin-bottom: 38px;
+}
+.step-item {
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+  position: relative;
+}
+.step-circle {
+  width: 36px; height: 36px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.78rem; font-weight: 800;
+  border: 2px solid rgba(0,0,0,0.1);
+  background: rgba(255,255,255,0.8);
+  color: var(--muted);
+  transition: all 0.35s ease;
+  z-index: 1;
+}
+.step-circle svg { width: 14px; height: 14px; display: none; }
+.step-label { font-size: 0.68rem; font-weight: 700; color: var(--muted); white-space: nowrap; transition: color 0.3s; }
+.step-connector {
+  width: 70px; height: 2px;
+  background: rgba(0,0,0,0.08);
+  margin-bottom: 20px;
+  transition: background 0.4s ease;
+  flex-shrink: 0;
+}
+.step-item.active .step-circle {
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  border-color: transparent; color: #fff;
+  box-shadow: 0 4px 14px rgba(79,124,255,0.35);
+}
+.step-item.active .step-label { color: var(--accent); }
+.step-item.done .step-circle {
+  background: var(--green); border-color: transparent; color: #fff;
+}
+.step-item.done .step-circle .step-num { display: none; }
+.step-item.done .step-circle svg { display: block; }
+.step-item.done .step-label { color: var(--green); }
+.step-connector.done { background: var(--green); }
+
+/* Flash */
+.flash-alert {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-radius: 12px; margin-bottom: 20px;
+  font-size: 0.81rem; font-weight: 600;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn { from{opacity:0;transform:translateY(-5px)} to{opacity:1;transform:translateY(0)} }
+.flash-alert.danger  { background: rgba(239,68,68,0.09);  color: #dc2626; border: 1px solid rgba(239,68,68,0.2);  }
+.flash-alert.success { background: rgba(34,197,94,0.09);  color: #16a34a; border: 1px solid rgba(34,197,94,0.2);  }
+.flash-alert svg { width: 15px; height: 15px; flex-shrink: 0; }
+
+/* Form Elements */
+.form-group { margin-bottom: 16px; }
+.form-label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.3px; text-transform: uppercase; }
+.form-control {
+  width: 100%; padding: 11px 14px; border-radius: 11px;
+  border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.7);
+  color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 0.87rem; font-weight: 500; outline: none; transition: all 0.2s;
+}
+.form-control:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 4px rgba(79,124,255,0.12); }
+.form-control::placeholder { color: #94a3b8; }
+.input-wrap { position: relative; }
+.input-wrap .form-control { padding-left: 40px; }
+.input-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #94a3b8; width: 15px; height: 15px; pointer-events: none; }
+.toggle-pass { position: absolute; right: 12px; top: 50%; transform: translateY(-50%); background: none; border: none; color: #94a3b8; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+.toggle-pass svg { width: 15px; height: 15px; }
+.form-row { display: flex; gap: 12px; }
+.form-row .form-group { flex: 1; }
+.form-select {
+  width: 100%; padding: 11px 14px; border-radius: 11px;
+  border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.7);
+  color: var(--text); font-family: 'Inter', sans-serif;
+  font-size: 0.87rem; font-weight: 500; outline: none;
+  -webkit-appearance: none; cursor: pointer; transition: all 0.2s;
+}
+.form-select:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 4px rgba(79,124,255,0.12); }
+
+/* PIN Input */
+.pin-label { display: block; font-size: 0.75rem; font-weight: 700; color: var(--muted); margin-bottom: 10px; letter-spacing: 0.3px; text-transform: uppercase; }
+.pin-row {
+  display: flex; gap: 10px; justify-content: center; margin-bottom: 8px;
+}
+.pin-input {
+  width: 52px; height: 58px; text-align: center;
+  border-radius: 12px; border: 2px solid rgba(0,0,0,0.09);
+  background: rgba(255,255,255,0.7); color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 1.4rem; font-weight: 800;
+  outline: none; transition: all 0.2s;
+  -moz-appearance: textfield;
+  -webkit-text-security: disc;
+}
+.pin-hint { font-size: 0.72rem; color: var(--muted); text-align: center; font-weight: 500; }
+
+/* PIN strength */
+.pin-confirm-row { display: flex; gap: 10px; justify-content: center; margin-bottom: 6px; }
+.pin-confirm-input {
+  width: 52px; height: 58px; text-align: center;
+  border-radius: 12px; border: 2px solid rgba(0,0,0,0.09);
+  background: rgba(255,255,255,0.7); color: var(--text);
+  font-family: 'Inter', sans-serif; font-size: 1.4rem; font-weight: 800;
+  outline: none; transition: all 0.2s;
+  -moz-appearance: textfield;
+  -webkit-text-security: disc;
+}
+.pin-confirm-input::-webkit-inner-spin-button,
+.pin-confirm-input::-webkit-outer-spin-button { -webkit-appearance: none; }
+.pin-confirm-input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 4px rgba(79,124,255,0.12); }
+.pin-match-msg { font-size: 0.72rem; text-align: center; font-weight: 600; min-height: 16px; }
+
+/* Terms */
+.terms-wrap {
+  display: flex; align-items: flex-start; gap: 10px;
+  padding: 14px; border-radius: 12px; background: rgba(79,124,255,0.04);
+  border: 1px solid rgba(79,124,255,0.1); margin-bottom: 20px;
+}
+.terms-wrap input[type="checkbox"] { accent-color: var(--accent); width: 16px; height: 16px; flex-shrink: 0; margin-top: 1px; cursor: pointer; }
+.terms-wrap label { font-size: 0.78rem; color: var(--muted); line-height: 1.5; cursor: pointer; }
+.terms-wrap label a { color: var(--accent); font-weight: 600; text-decoration: none; }
+
+/* Nav Buttons */
+.step-nav { display: flex; gap: 12px; margin-top: 24px; }
+.btn-back {
+  flex: 1; padding: 12px; border-radius: 13px;
+  border: 1.5px solid rgba(0,0,0,0.09); background: rgba(255,255,255,0.7);
+  color: var(--muted); font-family: 'Inter', sans-serif;
+  font-size: 0.9rem; font-weight: 700; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+}
+.btn-back:hover { background: #fff; border-color: rgba(0,0,0,0.14); color: var(--text); }
+.btn-back svg { width: 16px; height: 16px; }
+.btn-next {
+  flex: 2; padding: 13px; border-radius: 13px;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  color: #fff; border: none; font-family: 'Inter', sans-serif;
+  font-size: 0.92rem; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 6px 20px rgba(79,124,255,0.28); transition: all 0.25s;
+}
+.btn-next:hover { transform: translateY(-2px); box-shadow: 0 10px 28px rgba(79,124,255,0.38); }
+.btn-next:active { transform: translateY(0); }
+.btn-next:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+.btn-next svg { width: 16px; height: 16px; }
+
+.login-link { text-align: center; margin-top: 18px; font-size: 0.81rem; color: var(--muted); }
+.login-link a { color: var(--accent); font-weight: 700; text-decoration: none; }
+
+/* Password strength */
+.pw-strength-bar { height: 4px; border-radius: 2px; margin-top: 6px; transition: all 0.3s; background: rgba(0,0,0,0.07); }
+.pw-strength-fill { height: 100%; border-radius: 2px; width: 0; transition: all 0.4s ease; }
+
+/* Step panels */
+.step-panel { display: none; }
+.step-panel.active { display: block; animation: fadeIn 0.35s ease; }
+@keyframes fadeIn { from{opacity:0;transform:translateX(10px)} to{opacity:1;transform:translateX(0)} }
+
+.step-section-label {
+  font-size: 0.72rem; font-weight: 800; color: var(--muted); letter-spacing: 1px;
+  text-transform: uppercase; margin-bottom: 16px; padding-bottom: 10px;
+  border-bottom: 1px solid rgba(0,0,0,0.06); display: flex; align-items: center; gap: 8px;
+}
+.step-section-label svg { width: 14px; height: 14px; }
+</style>
+</head>
+<body>
+<div class="bg-blobs">
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+  <div class="blob blob-3"></div>
+</div>
+
+<div class="register-card">
+  <!-- Animated Road Scene -->
+  <div class="road-scene-sm">
+    <div class="road-surface-sm"></div>
+    <div class="road-line-sm"></div>
+    <div class="road-line-sm"></div>
+    <div class="road-line-sm"></div>
+    <svg class="car-sm c1" width="42" height="20" viewBox="0 0 42 20" fill="none">
+      <rect x="4" y="7" width="34" height="11" rx="4" fill="#4f7cff"/>
+      <rect x="9" y="3" width="20" height="9" rx="2" fill="#7c5cff"/>
+      <rect x="11" y="5" width="7" height="5" rx="1" fill="rgba(255,255,255,0.6)"/>
+      <rect x="20" y="5" width="7" height="5" rx="1" fill="rgba(255,255,255,0.6)"/>
+      <circle cx="11" cy="17" r="4" fill="#1e293b"/><circle cx="31" cy="17" r="4" fill="#1e293b"/>
+      <circle cx="11" cy="17" r="2" fill="#475569"/><circle cx="31" cy="17" r="2" fill="#475569"/>
+      <rect x="36" y="10" width="4" height="3" rx="1" fill="#fbbf24"/>
+    </svg>
+    <svg class="car-sm c2" width="54" height="25" viewBox="0 0 54 25" fill="none">
+      <rect x="2" y="9" width="50" height="13" rx="3" fill="#334155"/>
+      <rect x="6" y="4" width="34" height="11" rx="2" fill="#475569"/>
+      <rect x="8" y="6" width="9" height="6" rx="1" fill="rgba(255,255,255,0.4)"/>
+      <rect x="20" y="6" width="9" height="6" rx="1" fill="rgba(255,255,255,0.4)"/>
+      <circle cx="12" cy="22" r="5" fill="#1e293b"/><circle cx="42" cy="22" r="5" fill="#1e293b"/>
+      <circle cx="12" cy="22" r="2.5" fill="#475569"/><circle cx="42" cy="22" r="2.5" fill="#475569"/>
+      <rect x="48" y="13" width="4" height="3" rx="1" fill="#fbbf24"/>
+    </svg>
+  </div>
+
+  <div class="card-header-area">
+    <div class="logo-wrap"><i data-lucide="building-2"></i></div>
+    <h1 class="card-title">Register Your Company</h1>
+    <p class="card-subtitle">Set up your organization on the AI Toll Management Platform</p>
+  </div>
+
+  <!-- Step Progress -->
+  <div class="step-progress" id="stepProgress">
+    <div class="step-item active" id="si-1">
+      <div class="step-circle"><span class="step-num">1</span><i data-lucide="check"></i></div>
+      <div class="step-label">Company</div>
+    </div>
+    <div class="step-connector" id="conn-1"></div>
+    <div class="step-item" id="si-2">
+      <div class="step-circle"><span class="step-num">2</span><i data-lucide="check"></i></div>
+      <div class="step-label">Admin Account</div>
+    </div>
+    <div class="step-connector" id="conn-2"></div>
+    <div class="step-item" id="si-3">
+      <div class="step-circle"><span class="step-num">3</span><i data-lucide="check"></i></div>
+      <div class="step-label">Security PIN</div>
+    </div>
+  </div>
+
+  <!-- Flash Messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, message in messages %}
+        <div class="flash-alert {{ category }}">
+          {% if category == 'danger' %}<i data-lucide="alert-circle"></i>
+          {% else %}<i data-lucide="check-circle"></i>{% endif %}
+          <span>{{ message }}</span>
+        </div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  <form method="POST" action="/register" id="registerForm">
+
+    <!-- STEP 1: Company Details -->
+    <div class="step-panel active" id="step1">
+      <div class="step-section-label"><i data-lucide="building-2"></i> Company Information</div>
+      <div class="form-group">
+        <label class="form-label" for="company_name">Company / Organization Name *</label>
+        <div class="input-wrap">
+          <i data-lucide="briefcase" class="input-icon"></i>
+          <input class="form-control" type="text" id="company_name" name="company_name" placeholder="e.g. Maharashtra State Road Development Corp." required>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label" for="company_type">Organization Type</label>
+          <select class="form-select" id="company_type" name="company_type">
+            <option value="">Select type...</option>
+            <option value="State Government">State Government</option>
+            <option value="Central Government">Central Government</option>
+            <option value="PSU">Public Sector Undertaking (PSU)</option>
+            <option value="Private Concessionaire">Private Concessionaire</option>
+            <option value="Municipal Corporation">Municipal Corporation</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="state">State / UT</label>
+          <select class="form-select" id="state" name="state">
+            <option value="">Select state...</option>
+            <option>Andhra Pradesh</option><option>Assam</option><option>Bihar</option>
+            <option>Delhi</option><option>Gujarat</option><option>Haryana</option>
+            <option>Himachal Pradesh</option><option>Jharkhand</option><option>Karnataka</option>
+            <option>Kerala</option><option>Madhya Pradesh</option><option>Maharashtra</option>
+            <option>Odisha</option><option>Punjab</option><option>Rajasthan</option>
+            <option>Tamil Nadu</option><option>Telangana</option><option>Uttar Pradesh</option>
+            <option>Uttarakhand</option><option>West Bengal</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="gst_number">GST Number</label>
+        <div class="input-wrap">
+          <i data-lucide="hash" class="input-icon"></i>
+          <input class="form-control" type="text" id="gst_number" name="gst_number" placeholder="22AAAAA0000A1Z5" maxlength="15" style="text-transform: uppercase;">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="address">Registered Office Address</label>
+        <textarea class="form-control" id="address" name="address" rows="2" placeholder="Building, Street, City, PIN Code" style="resize: vertical;"></textarea>
+      </div>
+      <div class="step-nav">
+        <button type="button" class="btn-next" onclick="goToStep(2)" id="next1Btn" style="flex: 1;">
+          Continue <i data-lucide="arrow-right"></i>
+        </button>
+      </div>
+    </div>
+
+    <!-- STEP 2: Admin Account -->
+    <div class="step-panel" id="step2">
+      <div class="step-section-label"><i data-lucide="user"></i> Administrator Account</div>
+      <div class="form-group">
+        <label class="form-label" for="full_name">Full Name *</label>
+        <div class="input-wrap">
+          <i data-lucide="user" class="input-icon"></i>
+          <input class="form-control" type="text" id="full_name" name="full_name" placeholder="e.g. Ramesh Gupta" required>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="email">Official Email Address *</label>
+        <div class="input-wrap">
+          <i data-lucide="mail" class="input-icon"></i>
+          <input class="form-control" type="email" id="email" name="email" placeholder="you@organization.gov.in" required autocomplete="email">
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="password">Password *</label>
+        <div class="input-wrap">
+          <i data-lucide="lock" class="input-icon"></i>
+          <input class="form-control" type="password" id="password" name="password" placeholder="Min. 8 characters" required style="padding-right: 44px;" oninput="checkPwStrength(this.value)">
+          <button type="button" class="toggle-pass" onclick="togglePass('password', 'eye1')"><i data-lucide="eye" id="eye1"></i></button>
+        </div>
+        <div class="pw-strength-bar"><div class="pw-strength-fill" id="pwStrengthFill"></div></div>
+        <div id="pwStrengthLabel" style="font-size:0.7rem; color: var(--muted); margin-top: 4px;"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label" for="confirm_password">Confirm Password *</label>
+        <div class="input-wrap">
+          <i data-lucide="lock" class="input-icon"></i>
+          <input class="form-control" type="password" id="confirm_password" name="confirm_password" placeholder="Re-enter your password" required style="padding-right: 44px;" oninput="checkPwMatch()">
+          <button type="button" class="toggle-pass" onclick="togglePass('confirm_password', 'eye2')"><i data-lucide="eye" id="eye2"></i></button>
+        </div>
+        <div id="pwMatchMsg" style="font-size:0.72rem; margin-top: 5px; font-weight: 600;"></div>
+      </div>
+      <div class="step-nav">
+        <button type="button" class="btn-back" onclick="goToStep(1)"><i data-lucide="arrow-left"></i> Back</button>
+        <button type="button" class="btn-next" onclick="goToStep(3)" id="next2Btn">Continue <i data-lucide="arrow-right"></i></button>
+      </div>
+    </div>
+
+    <!-- STEP 3: Security PIN -->
+    <div class="step-panel" id="step3">
+      <div class="step-section-label"><i data-lucide="shield-check"></i> Security PIN Verification</div>
+      <p style="font-size: 0.82rem; color: var(--muted); margin-bottom: 24px; line-height: 1.6;">
+        Enter the <strong style="color: var(--text);">8-digit Security PIN</strong> generated for your organization by the System Administrator.
+        This PIN is required to verify and authorize your company registration.
+      </p>
+
+      <!-- Hidden field that gets auto-filled by JS -->
+      <input type="hidden" name="security_pin" id="security_pin_hidden">
+
+      <label class="pin-label">Enter Security PIN</label>
+      <div class="pin-row" id="pinRow">
+        <input class="pin-input" type="text" maxlength="1" data-pin="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-input" type="text" maxlength="1" data-pin="2" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-input" type="text" maxlength="1" data-pin="3" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-input" type="text" maxlength="1" data-pin="4" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-input" type="text" maxlength="1" data-pin="5" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-input" type="text" maxlength="1" data-pin="6" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-input" type="text" maxlength="1" data-pin="7" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-input" type="text" maxlength="1" data-pin="8" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+      </div>
+      <p class="pin-hint" style="margin-bottom: 24px;">Enter 8 digits. Use numbers only.</p>
+
+      <label class="pin-label">Confirm Security PIN</label>
+      <div class="pin-confirm-row" id="pinConfirmRow">
+        <input class="pin-confirm-input" type="text" maxlength="1" data-cpin="1" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-confirm-input" type="text" maxlength="1" data-cpin="2" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-confirm-input" type="text" maxlength="1" data-cpin="3" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-confirm-input" type="text" maxlength="1" data-cpin="4" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-confirm-input" type="text" maxlength="1" data-cpin="5" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-confirm-input" type="text" maxlength="1" data-cpin="6" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-confirm-input" type="text" maxlength="1" data-cpin="7" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+        <input class="pin-confirm-input" type="text" maxlength="1" data-cpin="8" inputmode="numeric" pattern="[0-9]" autocomplete="one-time-code">
+      </div>
+      <div class="pin-match-msg" id="pinMatchMsg" style="margin-bottom: 20px;"></div>
+
+      <!-- Terms -->
+      <div class="terms-wrap">
+        <input type="checkbox" id="agreeTerms" required>
+        <label for="agreeTerms">
+          I confirm that all company information is accurate and agree to the
+          <a href="#">Terms of Service</a> and <a href="#">Data Processing Agreement</a>
+          of the NHAI AI Toll Management Platform.
+        </label>
+      </div>
+
+      <div class="step-nav">
+        <button type="button" class="btn-back" onclick="goToStep(2)"><i data-lucide="arrow-left"></i> Back</button>
+        <button type="submit" class="btn-next" id="submitBtn" onclick="return validateStep3()">
+          <i data-lucide="check-circle"></i> Submit Registration
+        </button>
+      </div>
+    </div>
+
+  </form>
+
+  <div class="login-link">Already have an account? <a href="/login">Sign in here</a></div>
+</div>
+
+<script>
+lucide.createIcons();
+
+let currentStep = 1;
+
+function goToStep(step) {
+  // Validate before proceeding
+  if (step > currentStep && !validateCurrentStep()) return;
+
+  // Update panels
+  document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('step' + step).classList.add('active');
+
+  // Update progress indicators
+  for (let i = 1; i <= 3; i++) {
+    const si = document.getElementById('si-' + i);
+    si.classList.remove('active', 'done');
+    if (i < step) si.classList.add('done');
+    else if (i === step) si.classList.add('active');
+  }
+  for (let i = 1; i <= 2; i++) {
+    const conn = document.getElementById('conn-' + i);
+    conn.classList.toggle('done', i < step);
+  }
+  currentStep = step;
+  lucide.createIcons();
+}
+
+function validateCurrentStep() {
+  if (currentStep === 1) {
+    const name = document.getElementById('company_name').value.trim();
+    if (!name) { alert('Please enter a company name.'); return false; }
+    return true;
+  }
+  if (currentStep === 2) {
+    const name  = document.getElementById('full_name').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const pw    = document.getElementById('password').value;
+    const cpw   = document.getElementById('confirm_password').value;
+    if (!name)  { alert('Please enter your full name.'); return false; }
+    if (!email) { alert('Please enter your email address.'); return false; }
+    if (!pw)    { alert('Please set a password.'); return false; }
+    if (pw.length < 8) { alert('Password must be at least 8 characters.'); return false; }
+    if (pw !== cpw) { alert('Passwords do not match.'); return false; }
+    return true;
+  }
+  return true;
+}
+
+function validateStep3() {
+  const pin  = getPinValue('pin');
+  const cpin = getPinValue('cpin');
+  if (pin.length !== 8 || !/^\d{8}$/.test(pin)) {
+    alert('Please enter all 8 digits of your security PIN.'); return false;
+  }
+  if (pin !== cpin) {
+    alert('Security PINs do not match.'); return false;
+  }
+  if (!document.getElementById('agreeTerms').checked) {
+    alert('Please agree to the Terms of Service to continue.'); return false;
+  }
+  document.getElementById('security_pin_hidden').value = pin;
+  return true;
+}
+
+function getPinValue(type) {
+  const attr = type === 'pin' ? 'data-pin' : 'data-cpin';
+  return Array.from(document.querySelectorAll('[' + attr + ']')).map(i => i.value).join('');
+}
+
+// PIN input – auto advance focus
+function setupPinInputs(selector, attr) {
+  const inputs = document.querySelectorAll(selector);
+  inputs.forEach((inp, idx) => {
+    inp.addEventListener('input', e => {
+      const val = e.target.value.replace(/\D/g, '');
+      e.target.value = val ? val[0] : '';
+      if (val && idx < inputs.length - 1) inputs[idx + 1].focus();
+      checkPinMatch();
+    });
+    inp.addEventListener('keydown', e => {
+      if (e.key === 'Backspace' && !inp.value && idx > 0) inputs[idx - 1].focus();
+      if (e.key === 'ArrowLeft' && idx > 0) inputs[idx - 1].focus();
+      if (e.key === 'ArrowRight' && idx < inputs.length - 1) inputs[idx + 1].focus();
+    });
+    inp.addEventListener('paste', e => {
+      e.preventDefault();
+      const pasted = (e.clipboardData.getData('text')).replace(/\D/g, '').slice(0, 8);
+      pasted.split('').forEach((ch, i) => { if (inputs[i]) inputs[i].value = ch; });
+      checkPinMatch();
+    });
+  });
+}
+
+setupPinInputs('[data-pin]',  'data-pin');
+setupPinInputs('[data-cpin]', 'data-cpin');
+
+function checkPinMatch() {
+  const pin  = getPinValue('pin');
+  const cpin = getPinValue('cpin');
+  const msg  = document.getElementById('pinMatchMsg');
+  if (cpin.length === 0) { msg.textContent = ''; return; }
+  if (pin.length === 8 && cpin.length === 8) {
+    if (pin === cpin) { msg.textContent = 'PINs match'; msg.style.color = '#16a34a'; }
+    else              { msg.textContent = 'PINs do not match'; msg.style.color = '#dc2626'; }
+  } else {
+    msg.textContent = '';
+  }
+}
+
+// Password strength
+function checkPwStrength(val) {
+  const fill  = document.getElementById('pwStrengthFill');
+  const label = document.getElementById('pwStrengthLabel');
+  if (!val) { fill.style.width = '0'; label.textContent = ''; return; }
+  let score = 0;
+  if (val.length >= 8)  score++;
+  if (val.length >= 12) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^a-zA-Z0-9]/.test(val)) score++;
+  const levels = [
+    { w: '20%', c: '#ef4444', l: 'Very weak' },
+    { w: '40%', c: '#f97316', l: 'Weak' },
+    { w: '60%', c: '#eab308', l: 'Fair' },
+    { w: '80%', c: '#22c55e', l: 'Strong' },
+    { w: '100%', c: '#16a34a', l: 'Very strong' }
+  ];
+  const lvl = levels[Math.min(score, 4)];
+  fill.style.width = lvl.w;
+  fill.style.background = lvl.c;
+  label.textContent = lvl.l;
+  label.style.color = lvl.c;
+}
+
+function checkPwMatch() {
+  const pw   = document.getElementById('password').value;
+  const cpw  = document.getElementById('confirm_password').value;
+  const msg  = document.getElementById('pwMatchMsg');
+  if (!cpw) { msg.textContent = ''; return; }
+  if (pw === cpw) { msg.textContent = 'Passwords match'; msg.style.color = '#16a34a'; }
+  else            { msg.textContent = 'Passwords do not match'; msg.style.color = '#dc2626'; }
+}
+
+function togglePass(inputId, iconId) {
+  const inp  = document.getElementById(inputId);
+  const icon = document.getElementById(iconId);
+  if (inp.type === 'password') { inp.type = 'text'; icon.setAttribute('data-lucide', 'eye-off'); }
+  else { inp.type = 'password'; icon.setAttribute('data-lucide', 'eye'); }
+  lucide.createIcons();
+}
+</script>
+</body>
+</html>

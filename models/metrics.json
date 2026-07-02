@@ -1,0 +1,76 @@
+{
+  "accuracy": 0.9837,
+  "precision": 0.9838,
+  "recall": 0.9837,
+  "f1_score": 0.9837,
+  "cv_mean": 0.9841,
+  "report": {
+    "0": {
+      "precision": 0.9962481962481963,
+      "recall": 0.9854410505281187,
+      "f1-score": 0.9908151549942594,
+      "support": 3503.0
+    },
+    "1": {
+      "precision": 0.9695431472081218,
+      "recall": 0.9734255551510739,
+      "f1-score": 0.971480472297911,
+      "support": 2747.0
+    },
+    "2": {
+      "precision": 0.9824458747805734,
+      "recall": 0.9902683574166913,
+      "f1-score": 0.9863416066970186,
+      "support": 3391.0
+    },
+    "accuracy": 0.9837153822217612,
+    "macro avg": {
+      "precision": 0.9827457394122971,
+      "recall": 0.9830449876986279,
+      "f1-score": 0.9828790779963964,
+      "support": 9641.0
+    },
+    "weighted avg": {
+      "precision": 0.9837845055719393,
+      "recall": 0.9837153822217612,
+      "f1-score": 0.9837326764502482,
+      "support": 9641.0
+    }
+  },
+  "feature_importance": {
+    "hour": 0.069,
+    "day_of_week": 0.0099,
+    "month": 0.0036,
+    "rush_intensity": 0.0179,
+    "time_of_day": 0.0666,
+    "season": 0.0018,
+    "day_type": 0.0,
+    "vol_noisy": 0.1917,
+    "speed_noisy": 0.1503,
+    "travel_time": 0.4715,
+    "temp_celsius": 0.0104,
+    "rain_1h": 0.0011,
+    "snow_1h": 0.0,
+    "clouds_all": 0.0032,
+    "weather_encoded": 0.0021,
+    "bad_weather": 0.0008
+  },
+  "feature_cols": [
+    "hour",
+    "day_of_week",
+    "month",
+    "rush_intensity",
+    "time_of_day",
+    "season",
+    "day_type",
+    "vol_noisy",
+    "speed_noisy",
+    "travel_time",
+    "temp_celsius",
+    "rain_1h",
+    "snow_1h",
+    "clouds_all",
+    "weather_encoded",
+    "bad_weather"
+  ]
+}
