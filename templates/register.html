@@ -62,35 +62,6 @@ body {
 }
 @media (max-width: 640px) { .register-card { padding: 32px 24px; border-radius: 20px; } }
 
-/* Animated Road */
-.road-scene-sm {
-  margin-bottom: 28px;
-  position: relative; height: 70px; border-radius: 14px; overflow: hidden;
-  background: linear-gradient(180deg, #c8e6c9 0%, #a5d6a7 38%, #6abf69 38%, #6abf69 100%);
-  box-shadow: 0 4px 16px rgba(0,0,0,0.07);
-}
-.road-surface-sm {
-  position: absolute; bottom: 0; left: 0; right: 0; height: 42px; background: #37474f;
-}
-.road-line-sm {
-  position: absolute; bottom: 16px; left: 0;
-  height: 3px; width: 46px; background: #fff; border-radius: 2px;
-  animation: roadLinesSm 1.3s linear infinite; opacity: 0.7;
-}
-.road-line-sm:nth-child(3) { animation-delay: -0.43s; }
-.road-line-sm:nth-child(4) { animation-delay: -0.87s; }
-@keyframes roadLinesSm {
-  0%   { transform: translateX(640px); opacity: 0.7; }
-  5%   { opacity: 0.7; } 90% { opacity: 0.7; }
-  100% { transform: translateX(-60px); opacity: 0; }
-}
-.car-sm { position: absolute; bottom: 20px; animation: driveSm linear infinite; }
-.car-sm.c1 { animation-duration: 3.5s; animation-delay: 0s; }
-.car-sm.c2 { animation-duration: 5s;   animation-delay: -2s; bottom: 28px; }
-@keyframes driveSm {
-  0%   { transform: translateX(640px); }
-  100% { transform: translateX(-80px); }
-}
 
 /* Header */
 .card-header-area { text-align: center; margin-bottom: 36px; }
@@ -280,31 +251,6 @@ body {
 </div>
 
 <div class="register-card">
-  <!-- Animated Road Scene -->
-  <div class="road-scene-sm">
-    <div class="road-surface-sm"></div>
-    <div class="road-line-sm"></div>
-    <div class="road-line-sm"></div>
-    <div class="road-line-sm"></div>
-    <svg class="car-sm c1" width="42" height="20" viewBox="0 0 42 20" fill="none">
-      <rect x="4" y="7" width="34" height="11" rx="4" fill="#4f7cff"/>
-      <rect x="9" y="3" width="20" height="9" rx="2" fill="#7c5cff"/>
-      <rect x="11" y="5" width="7" height="5" rx="1" fill="rgba(255,255,255,0.6)"/>
-      <rect x="20" y="5" width="7" height="5" rx="1" fill="rgba(255,255,255,0.6)"/>
-      <circle cx="11" cy="17" r="4" fill="#1e293b"/><circle cx="31" cy="17" r="4" fill="#1e293b"/>
-      <circle cx="11" cy="17" r="2" fill="#475569"/><circle cx="31" cy="17" r="2" fill="#475569"/>
-      <rect x="36" y="10" width="4" height="3" rx="1" fill="#fbbf24"/>
-    </svg>
-    <svg class="car-sm c2" width="54" height="25" viewBox="0 0 54 25" fill="none">
-      <rect x="2" y="9" width="50" height="13" rx="3" fill="#334155"/>
-      <rect x="6" y="4" width="34" height="11" rx="2" fill="#475569"/>
-      <rect x="8" y="6" width="9" height="6" rx="1" fill="rgba(255,255,255,0.4)"/>
-      <rect x="20" y="6" width="9" height="6" rx="1" fill="rgba(255,255,255,0.4)"/>
-      <circle cx="12" cy="22" r="5" fill="#1e293b"/><circle cx="42" cy="22" r="5" fill="#1e293b"/>
-      <circle cx="12" cy="22" r="2.5" fill="#475569"/><circle cx="42" cy="22" r="2.5" fill="#475569"/>
-      <rect x="48" y="13" width="4" height="3" rx="1" fill="#fbbf24"/>
-    </svg>
-  </div>
 
   <div class="card-header-area">
     <div class="logo-wrap"><i data-lucide="building-2"></i></div>

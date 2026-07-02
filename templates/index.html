@@ -1795,35 +1795,6 @@
       to { transform: scale(4); opacity: 0; }
     }
 
-    /* ── Sidebar Road Animation (Mini) ── */
-    .sidebar-road {
-      margin: 0 0.75rem 0.75rem;
-      position: relative; height: 44px; border-radius: 12px; overflow: hidden;
-      background: linear-gradient(180deg, #c8e6c9 0%, #6abf69 40%, #37474f 40%);
-      flex-shrink: 0;
-    }
-    .sidebar.collapsed .sidebar-road { display: none; }
-    .sidebar-road-line {
-      position: absolute; bottom: 17px;
-      height: 2.5px; width: 32px; background: #fff;
-      border-radius: 2px; animation: sidebarRoad 1.1s linear infinite; opacity: 0.65;
-    }
-    .sidebar-road-line:nth-child(2) { animation-delay: -0.37s; }
-    .sidebar-road-line:nth-child(3) { animation-delay: -0.74s; }
-    @keyframes sidebarRoad {
-      0%   { transform: translateX(280px); }
-      100% { transform: translateX(-40px); }
-    }
-    .sidebar-road-car {
-      position: absolute; bottom: 19px;
-      animation: sidebarCar linear infinite;
-    }
-    .sidebar-road-car.sc1 { animation-duration: 3s; animation-delay: 0s; }
-    .sidebar-road-car.sc2 { animation-duration: 4.5s; animation-delay: -2s; bottom: 25px; }
-    @keyframes sidebarCar {
-      0%   { transform: translateX(280px); }
-      100% { transform: translateX(-50px); }
-    }
 
     /* ── Improved Profile Dropdown ── */
     .user-dropdown-menu {
@@ -1986,28 +1957,6 @@
         {% endif %}
       </nav>
 
-      <!-- ── Sidebar Road Animation ── -->
-      <div class="sidebar-road">
-        <div class="sidebar-road-line"></div>
-        <div class="sidebar-road-line"></div>
-        <div class="sidebar-road-line"></div>
-        <svg class="sidebar-road-car sc1" width="32" height="15" viewBox="0 0 32 15" fill="none">
-          <rect x="3" y="5" width="26" height="9" rx="3" fill="#4f7cff"/>
-          <rect x="7" y="2" width="14" height="7" rx="2" fill="#7c5cff"/>
-          <rect x="8" y="3" width="5" height="4" rx="1" fill="rgba(255,255,255,0.6)"/>
-          <rect x="15" y="3" width="5" height="4" rx="1" fill="rgba(255,255,255,0.6)"/>
-          <circle cx="8" cy="14" r="3" fill="#1e293b"/><circle cx="24" cy="14" r="3" fill="#1e293b"/>
-          <rect x="27" y="8" width="3" height="2" rx="1" fill="#fbbf24"/>
-        </svg>
-        <svg class="sidebar-road-car sc2" width="40" height="18" viewBox="0 0 40 18" fill="none">
-          <rect x="1" y="6" width="38" height="10" rx="2" fill="#334155"/>
-          <rect x="4" y="3" width="26" height="8" rx="2" fill="#475569"/>
-          <rect x="5" y="4" width="7" height="5" rx="1" fill="rgba(255,255,255,0.35)"/>
-          <rect x="14" y="4" width="7" height="5" rx="1" fill="rgba(255,255,255,0.35)"/>
-          <circle cx="9" cy="17" r="3.5" fill="#1e293b"/><circle cx="31" cy="17" r="3.5" fill="#1e293b"/>
-          <rect x="35" y="10" width="3" height="2" rx="1" fill="#fbbf24"/>
-        </svg>
-      </div>
 
       <div class="sidebar-profile">
         <div class="user-avatar">{{ current_user.full_name[:2].upper() }}</div>

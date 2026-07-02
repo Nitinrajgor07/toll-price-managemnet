@@ -364,7 +364,7 @@ def register():
                 flash(e, 'danger')
             return render_template('register.html')
 
-        # Create company (automatically approved via valid generated security PIN)
+        # Create company (pending approval by Main Admin)
         company = Company(
             name=company_name,
             company_type=company_type,
@@ -372,7 +372,7 @@ def register():
             address=address,
             state=state,
             security_pin=security_pin,
-            is_approved=True
+            is_approved=False
         )
         # Mark PIN as used
         gen_pin.is_used = True
@@ -391,13 +391,8 @@ def register():
         db.session.add(user)
         db.session.commit()
 
-        # Automatically log the user in directly to open the dashboard
-        login_user(user)
-        user.last_login = datetime.utcnow()
-        db.session.commit()
-
-        flash('Registration successful! Welcome to your dashboard.', 'success')
-        return redirect(url_for('index'))
+        flash('Registration successful! Your company account is pending approval by the Main Administrator.', 'warning')
+        return redirect(url_for('login'))
 
     return render_template('register.html')
 
