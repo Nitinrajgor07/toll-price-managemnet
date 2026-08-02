@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Monthly Toll Subscription — Smart Toll Management System</title>
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --accent: #4f7cff;
+      --accent2: #7c5cff;
+      --green: #22c55e;
+      --red: #ef4444;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, rgba(79, 124, 255, 0.05), rgba(124, 92, 255, 0.05));
+      border: 1px solid rgba(79, 124, 255, 0.15);
+      border-radius: 24px;
+      padding: 2.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03);
+    }
+
+    .step-indicator {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 2rem;
+      position: relative;
+    }
+
+    .step-indicator::before {
+      content: '';
+      position: absolute;
+      top: 18px;
+      left: 5%;
+      right: 5%;
+      height: 2px;
+      background: var(--border);
+      z-index: 1;
+    }
+
+    .step-item {
+      position: relative;
+      z-index: 2;
+      background: var(--bg);
+      padding: 0 6px;
+      text-align: center;
+    }
+
+    .step-number {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--border);
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      margin: 0 auto 6px;
+      transition: all 0.3s;
+    }
+
+    .step-item.active .step-number {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 4px 12px rgba(79, 124, 255, 0.35);
+    }
+
+    .step-item.completed .step-number {
+      background: var(--green);
+      color: #fff;
+    }
+
+    .step-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+    }
+
+    .step-item.active .step-label {
+      color: var(--accent);
+    }
+
+    .pass-details-box {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(79, 124, 255, 0.2);
+      border-radius: 18px;
+      padding: 1.5rem;
+    }
+
+    .payment-card {
+      background: #ffffff;
+      border: 2px dashed rgba(79, 124, 255, 0.3);
+      border-radius: 18px;
+      padding: 1.5rem;
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      transition: all 0.25s;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(79, 124, 255, 0.35);
+      color: #fff;
+    }
+
+    .btn-pay {
+      background: linear-gradient(135deg, #22c55e, #16a34a);
+      color: #fff;
+      font-weight: 700;
+      border: none;
+      border-radius: 12px;
+      padding: 14px 28px;
+      font-size: 1.05rem;
+      transition: all 0.25s;
+    }
+
+    .btn-pay:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(34, 197, 94, 0.35);
+      color: #fff;
+    }
+
+    /* Loading Pulse Ring */
+    .loader-pulse {
+      width: 72px;
+      height: 72px;
+      border: 4px solid rgba(79, 124, 255, 0.15);
+      border-top-color: var(--accent);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    /* Comment placeholders for future production integration:
+       - FUTURE VAHAN API INTEGRATION: Vehicle validation via Government VAHAN API
+       - FUTURE PAYMENT GATEWAY: Razorpay / Paytm / UPI Webhook checkout
+    */
+  </style>
+</head>
+
+<body>
+  <!-- Header Navbar -->
+  <nav class="navbar navbar-expand-lg glass-nav py-3">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-primary d-flex align-items-center gap-2" href="/">
+        <i data-lucide="shield-check" style="width:28px;height:28px;color:var(--accent)"></i>
+        <span>Smart Toll Management System</span>
+      </a>
+      <div class="d-flex align-items-center gap-2">
+        <a href="/buy-monthly-pass" class="btn btn-outline-primary btn-sm px-3" style="border-radius:10px;font-weight:600">
+          Buy Pass
+        </a>
+        <a href="/check-monthly-pass" class="btn btn-outline-primary btn-sm px-3" style="border-radius:10px;font-weight:600">
+          Check Pass
+        </a>
+        <a href="/login" class="btn btn-primary btn-sm px-3 ms-1" style="border-radius:10px;font-weight:600">
+          <i data-lucide="log-in" class="me-1" style="width:14px;height:14px"></i> Login
+        </a>
+        <a href="/register" class="btn btn-outline-secondary btn-sm px-3 ms-1" style="border-radius:10px;font-weight:600">
+          Register Organization
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="container my-auto py-5" style="max-width: 680px;">
+    <div class="hero-card">
+      <div class="mb-3 text-start">
+        <a href="/" class="btn btn-sm btn-light d-inline-flex align-items-center gap-1 text-decoration-none px-3 py-1" style="border-radius:10px;font-size:0.82rem;font-weight:600;color:var(--muted);border:1px solid var(--border)">
+          <i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back to Home
+        </a>
+      </div>
+
+      <div class="text-center mb-4">
+        <h2 class="fw-bold mb-2" style="font-size:2rem;letter-spacing:-0.5px;color:var(--text)">Monthly Toll Subscription</h2>
+        <p style="color:var(--muted);font-size:0.95rem;font-weight:500;margin-bottom:0">25 Trips Included • Valid for 30 Days</p>
+      </div>
+
+      <!-- Step Indicator -->
+      <div class="step-indicator">
+        <div class="step-item active" id="stepIndicator1">
+          <div class="step-number" id="num1">1</div>
+          <div class="step-label">Vehicle</div>
+        </div>
+        <div class="step-item" id="stepIndicator2">
+          <div class="step-number" id="num2">2</div>
+          <div class="step-label">Pass Details</div>
+        </div>
+        <div class="step-item" id="stepIndicator3">
+          <div class="step-number" id="num3">3</div>
+          <div class="step-label">Demo Payment</div>
+        </div>
+        <div class="step-item" id="stepIndicator4">
+          <div class="step-number" id="num4">4</div>
+          <div class="step-label">Payment Success</div>
+        </div>
+        <div class="step-item" id="stepIndicator5">
+          <div class="step-number" id="num5">5</div>
+          <div class="step-label">Activation</div>
+        </div>
+      </div>
+
+      <!-- Step 1: Vehicle Verification -->
+      <div id="step1">
+        <h5 class="fw-bold mb-3"><i data-lucide="car" class="me-2 text-primary"></i>Step 1: Enter Vehicle Registration Number</h5>
+        <div class="mb-3">
+          <label class="form-label" style="font-size:0.85rem;color:var(--muted)">Vehicle Registration Number</label>
+          <input type="text" id="vehInput" class="form-control form-control-lg px-3" placeholder="e.g. KA01AB1234" style="border-radius:12px;text-transform:uppercase;font-weight:700;letter-spacing:1px">
+          <div class="form-text mt-2" style="font-size:0.78rem">
+            ℹ️ Local vehicle database lookup enabled (e.g. KA01AB1234).<br>
+            <!-- FUTURE PRODUCTION: Vehicle verification will use Government VAHAN API -->
+          </div>
+        </div>
+        <div id="vehError" class="alert alert-danger py-2 d-none" style="font-size:0.85rem;border-radius:10px"></div>
+        <button class="btn btn-action w-100 mt-3" onclick="verifyVehicle()">Verify Vehicle & View Details →</button>
+      </div>
+
+      <!-- Step 2: Pass Details -->
+      <div id="step2" class="d-none">
+        <h5 class="fw-bold mb-3"><i data-lucide="file-text" class="me-2 text-primary"></i>Step 2: Monthly Pass Information</h5>
+        <div class="pass-details-box mb-4">
+          <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+            <div>
+              <div style="font-size:0.78rem;color:var(--muted);text-transform:uppercase;font-weight:700">Vehicle Number</div>
+              <div class="fw-bold fs-5 text-primary" id="sumVehNum">—</div>
+            </div>
+            <span class="badge bg-success-subtle text-success px-3 py-2" style="font-size:0.8rem;border-radius:10px">Verified</span>
+          </div>
+
+          <div class="row g-3 text-center mb-3">
+            <div class="col-6">
+              <div class="p-3 rounded" style="background:rgba(79,124,255,0.06);border:1px solid rgba(79,124,255,0.15)">
+                <div style="font-size:0.75rem;color:var(--muted);font-weight:600">MONTHLY PASS PRICE</div>
+                <div class="fw-bold fs-4 text-primary mt-1">₹1,200</div>
+              </div>
+            </div>
+            <div class="col-6">
+              <div class="p-3 rounded" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15)">
+                <div style="font-size:0.75rem;color:var(--muted);font-weight:600">INCLUDED TOLL TRIPS</div>
+                <div class="fw-bold fs-4 text-success mt-1">25 Trips</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="d-flex justify-content-between align-items-center" style="font-size:0.85rem;color:var(--muted)">
+            <span>Pass Validity Duration:</span>
+            <strong style="color:var(--text)">30 Days from Activation</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mt-2" style="font-size:0.85rem;color:var(--muted)">
+            <span>Overage Rule:</span>
+            <strong style="color:var(--text)">Trips 26+ charged @ ₹80 / trip</strong>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2">
+          <button class="btn btn-light px-4" onclick="goToStep(1)" style="border-radius:12px">Back</button>
+          <button class="btn btn-action flex-grow-1" onclick="goToStep(3)">Proceed to Payment (₹1,200) →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Demo Payment Page (Prototype Checkout) -->
+      <div id="step3" class="d-none">
+        <div class="payment-card mb-4 text-center">
+          <div class="badge bg-warning-subtle text-warning mb-2 px-3 py-1" style="font-weight:700;font-size:0.8rem;border-radius:8px">
+            💳 Demo Payment Gateway (Prototype)
+          </div>
+          <h4 class="fw-bold text-dark mt-1">Simulated Checkout</h4>
+          <p style="color:var(--muted);font-size:0.88rem" class="mb-4">Click "Pay Now" to process prototype payment simulation.</p>
+
+          <div class="pass-details-box text-start mb-4" style="background:#f8fafc">
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span style="font-size:0.85rem;color:var(--muted)">Registration Number:</span>
+              <strong class="text-primary fs-6" id="payVehNum">—</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span style="font-size:0.85rem;color:var(--muted)">Item Description:</span>
+              <strong style="color:var(--text)">30-Day Monthly Pass (25 Trips)</strong>
+            </div>
+            <div class="d-flex justify-content-between align-items-center pt-2 border-top">
+              <span style="font-size:0.9rem;font-weight:700;color:var(--text)">Total Payable Amount:</span>
+              <strong class="text-success fs-4">₹1,200</strong>
+            </div>
+          </div>
+
+          <div class="mb-4 text-start">
+            <label class="form-label" style="font-size:0.85rem;color:var(--muted);font-weight:600">Payment Mode Simulation:</label>
+            <div class="form-check p-3 rounded mb-2" style="border:1px solid var(--border);background:#fff">
+              <input class="form-check-input" type="radio" name="payMethod" id="payUpi" checked>
+              <label class="form-check-label fw-semibold" for="payUpi">
+                ⚡ FASTag Wallet / UPI AutoPay (Instant)
+              </label>
+            </div>
+            <div class="form-check p-3 rounded" style="border:1px solid var(--border);background:#fff">
+              <input class="form-check-input" type="radio" name="payMethod" id="payCard">
+              <label class="form-check-label fw-semibold" for="payCard">
+                💳 Credit / Debit Card (Simulated Checkout)
+              </label>
+            </div>
+          </div>
+
+          <!-- FUTURE PRODUCTION: Razorpay / Paytm / UPI Gateway integration -->
+          <div class="d-flex gap-2">
+            <button class="btn btn-light px-4" onclick="goToStep(2)" style="border-radius:12px">Back</button>
+            <button class="btn btn-pay flex-grow-1" id="payBtn" onclick="startSimulatedPaymentProcess()">
+              <i data-lucide="lock" class="me-1" style="width:18px;height:18px"></i> Pay Now ₹1,200
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3b: Processing Payment Loader Screen -->
+      <div id="stepProcessing" class="d-none text-center py-4">
+        <div class="loader-pulse mx-auto mb-4"></div>
+        <h4 class="fw-bold text-primary mb-2">Payment Processing...</h4>
+        <p style="color:var(--muted);font-size:0.9rem">Connecting to Demo Payment Gateway & Verifying Transaction... Please wait.</p>
+      </div>
+
+      <!-- Step 4: Demo Payment Successful Page -->
+      <div id="step4" class="d-none text-center">
+        <div class="mb-3">
+          <div class="mx-auto d-flex align-items-center justify-content-center" style="width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,0.15);color:var(--green)">
+            <i data-lucide="check-circle-2" style="width:36px;height:36px"></i>
+          </div>
+        </div>
+        <h3 class="fw-bold text-success mb-3">Payment Successful</h3>
+
+        <div class="pass-details-box text-start mb-4" style="background:#ffffff">
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <span style="color:var(--muted);font-size:0.85rem;font-weight:600">Demo Transaction ID:</span>
+            <strong class="text-primary font-monospace" id="sucTxnId">TXN-2026-00000000</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color:var(--muted);font-size:0.85rem">Vehicle Number:</span>
+            <strong style="color:var(--text)" id="sucVehNum">—</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color:var(--muted);font-size:0.85rem">Amount Paid:</span>
+            <strong class="text-success fw-bold">₹1,200</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="color:var(--muted);font-size:0.85rem">Payment Status:</span>
+            <span class="badge bg-success px-3 py-1" style="border-radius:8px;font-size:0.85rem;letter-spacing:0.5px">SUCCESS</span>
+          </div>
+        </div>
+
+        <button class="btn btn-action w-100 py-3" id="actBtn" onclick="activatePassNow()" style="font-size:1.05rem;font-weight:700">
+          ⚡ Activate Monthly Pass
+        </button>
+      </div>
+
+      <!-- Step 4b: Activating Pass Loader Screen -->
+      <div id="stepActivating" class="d-none text-center py-4">
+        <div class="loader-pulse mx-auto mb-4"></div>
+        <h4 class="fw-bold text-primary mb-2">Activating Monthly Pass...</h4>
+        <p style="color:var(--muted);font-size:0.9rem">Saving payment record & activating pass in database... Please wait.</p>
+      </div>
+
+      <!-- Step 5: Monthly Pass Activated Successfully -->
+      <div id="step5" class="d-none text-center">
+        <div class="mb-3">
+          <div class="mx-auto d-flex align-items-center justify-content-center" style="width:64px;height:64px;border-radius:50%;background:rgba(34,197,94,0.15);color:var(--green)">
+            <i data-lucide="check-circle" style="width:36px;height:36px"></i>
+          </div>
+        </div>
+        <h4 class="fw-bold text-success mb-3">✓ Monthly Pass Activated Successfully</h4>
+
+        <div class="pass-details-box text-start my-4" style="background:#fff">
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <span style="color:var(--muted);font-size:0.85rem;font-weight:600">Vehicle Number:</span>
+            <strong class="fs-5 text-primary" id="actVehNum">—</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color:var(--muted);font-size:0.85rem">Status:</span>
+            <span class="badge bg-success px-3 py-1" style="border-radius:8px">Active</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color:var(--muted);font-size:0.85rem">Trips Remaining:</span>
+            <strong class="text-success fs-6" id="actTrips">25 / 25</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color:var(--muted);font-size:0.85rem">Validity:</span>
+            <strong style="color:var(--text)" id="actValidity">30 Days</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="color:var(--muted);font-size:0.85rem">Expiry Date:</span>
+            <strong style="color:var(--text)" id="actExpiry">—</strong>
+          </div>
+        </div>
+
+        <div class="d-flex gap-2 justify-content-center">
+          <a href="/" class="btn btn-outline-primary px-4" style="border-radius:12px">Return Home</a>
+          <button class="btn btn-action px-4" onclick="location.reload()">Buy Another Pass</button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- JS Logic -->
+  <script>
+    let state = {
+      vehicle_number: '',
+      demo_txn_id: ''
+    };
+
+    function goToStep(stepNum) {
+      [1, 2, 3, 4, 5].forEach(i => {
+        const stepEl = document.getElementById(`step${i}`);
+        if (stepEl) stepEl.classList.add('d-none');
+        const ind = document.getElementById(`stepIndicator${i}`);
+        if (ind) {
+          ind.classList.remove('active', 'completed');
+          if (i < stepNum) ind.classList.add('completed');
+          if (i === stepNum) ind.classList.add('active');
+        }
+      });
+      document.getElementById('stepProcessing').classList.add('d-none');
+      document.getElementById('stepActivating').classList.add('d-none');
+      const targetEl = document.getElementById(`step${stepNum}`);
+      if (targetEl) targetEl.classList.remove('d-none');
+      lucide.createIcons();
+    }
+
+    async function verifyVehicle() {
+      const vehInput = document.getElementById('vehInput').value.trim();
+      const errEl = document.getElementById('vehError');
+      errEl.classList.add('d-none');
+
+      if (!vehInput) {
+        errEl.textContent = 'Please enter a vehicle registration number.';
+        errEl.classList.remove('d-none');
+        return;
+      }
+
+      try {
+        const res = await fetch('/api/public/verify-vehicle', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicle_number: vehInput })
+        });
+        const data = await res.json();
+        if (data.success) {
+          state.vehicle_number = data.vehicle_number;
+          document.getElementById('sumVehNum').textContent = data.vehicle_number;
+          document.getElementById('payVehNum').textContent = data.vehicle_number;
+          goToStep(2);
+        } else {
+          errEl.textContent = data.message || 'Vehicle not found.';
+          errEl.classList.remove('d-none');
+        }
+      } catch (e) {
+        errEl.textContent = 'Error verifying vehicle.';
+        errEl.classList.remove('d-none');
+      }
+    }
+
+    function startSimulatedPaymentProcess() {
+      // Hide Step 3 checkout, show Payment Processing screen
+      document.getElementById('step3').classList.add('d-none');
+      document.getElementById('stepProcessing').classList.remove('d-none');
+
+      // Generate demo transaction ID for prototype simulation
+      const randomDigits = Math.floor(10000000 + Math.random() * 90000000);
+      state.demo_txn_id = `TXN-2026-${randomDigits}`;
+
+      // Simulate 2.5s loading animation delay
+      setTimeout(() => {
+        document.getElementById('stepProcessing').classList.add('d-none');
+        
+        // Populate Demo Payment Successful Page (Step 4)
+        document.getElementById('sucTxnId').textContent = state.demo_txn_id;
+        document.getElementById('sucVehNum').textContent = state.vehicle_number;
+
+        // Transition to Step 4 (Payment Successful page)
+        goToStep(4);
+      }, 2500);
+    }
+
+    async function activatePassNow() {
+      // Hide Step 4, show Activating loader screen
+      document.getElementById('step4').classList.add('d-none');
+      document.getElementById('stepActivating').classList.remove('d-none');
+
+      try {
+        const res = await fetch('/api/public/purchase-pass', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            vehicle_number: state.vehicle_number,
+            transaction_id: state.demo_txn_id
+          })
+        });
+        const data = await res.json();
+
+        // 1.2s smooth loading animation before activating Step 5
+        setTimeout(() => {
+          document.getElementById('stepActivating').classList.add('d-none');
+
+          if (data.success) {
+            const p = data.pass;
+            
+            // Populate Pass Activated Screen (Step 5)
+            document.getElementById('actVehNum').textContent = p.vehicle_number;
+            document.getElementById('actTrips').textContent = `${p.trips_remaining} / ${p.total_trips}`;
+            document.getElementById('actValidity').textContent = p.validity;
+            document.getElementById('actExpiry').textContent = p.expiry_date;
+
+            // Transition step indicator to Step 5
+            goToStep(5);
+          } else {
+            alert(data.message || 'Failed to activate Monthly Pass.');
+            goToStep(4);
+          }
+        }, 1200);
+      } catch (e) {
+        document.getElementById('stepActivating').classList.add('d-none');
+        alert('Error saving pass record in database.');
+        goToStep(4);
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+</body>
+
+</html>

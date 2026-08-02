@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Check Monthly Pass — Smart Toll Management System</title>
+  <!-- Google Fonts & Lucide Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card-bg: rgba(255, 255, 255, 0.9);
+      --accent: #4f7cff;
+      --accent2: #7c5cff;
+      --green: #22c55e;
+      --red: #ef4444;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: rgba(0, 0, 0, 0.08);
+    }
+
+    body {
+      font-family: 'Outfit', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .glass-nav {
+      background: rgba(255, 255, 255, 0.85);
+      backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .hero-card {
+      background: linear-gradient(135deg, rgba(79, 124, 255, 0.05), rgba(124, 92, 255, 0.05));
+      border: 1px solid rgba(79, 124, 255, 0.15);
+      border-radius: 24px;
+      padding: 2.5rem;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.03);
+    }
+
+    .pass-details-box {
+      background: rgba(255, 255, 255, 0.95);
+      border: 1px solid rgba(79, 124, 255, 0.2);
+      border-radius: 18px;
+      padding: 1.5rem;
+    }
+
+    .btn-action {
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      color: #fff;
+      font-weight: 600;
+      border: none;
+      border-radius: 12px;
+      padding: 12px 24px;
+      transition: all 0.25s;
+    }
+
+    .btn-action:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 20px rgba(79, 124, 255, 0.35);
+      color: #fff;
+    }
+  </style>
+</head>
+
+<body>
+  <!-- Header Navbar -->
+  <nav class="navbar navbar-expand-lg glass-nav py-3">
+    <div class="container">
+      <a class="navbar-brand fw-bold text-primary d-flex align-items-center gap-2" href="/">
+        <i data-lucide="shield-check" style="width:28px;height:28px;color:var(--accent)"></i>
+        <span>Smart Toll Management System</span>
+      </a>
+      <div class="d-flex align-items-center gap-2">
+        <a href="/buy-monthly-pass" class="btn btn-outline-primary btn-sm px-3" style="border-radius:10px;font-weight:600">
+          Buy Pass
+        </a>
+        <a href="/check-monthly-pass" class="btn btn-outline-primary btn-sm px-3" style="border-radius:10px;font-weight:600">
+          Check Pass
+        </a>
+        <a href="/login" class="btn btn-primary btn-sm px-3 ms-1" style="border-radius:10px;font-weight:600">
+          <i data-lucide="log-in" class="me-1" style="width:14px;height:14px"></i> Login
+        </a>
+        <a href="/register" class="btn btn-outline-secondary btn-sm px-3 ms-1" style="border-radius:10px;font-weight:600">
+          Register Organization
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Main Content Container -->
+  <main class="container my-auto py-5" style="max-width: 620px;">
+    <div class="hero-card">
+      <div class="mb-3 text-start">
+        <a href="/" class="btn btn-sm btn-light d-inline-flex align-items-center gap-1 text-decoration-none px-3 py-1" style="border-radius:10px;font-size:0.82rem;font-weight:600;color:var(--muted);border:1px solid var(--border)">
+          <i data-lucide="arrow-left" style="width:14px;height:14px"></i> Back to Home
+        </a>
+      </div>
+
+      <div class="text-center mb-4">
+        <h2 class="fw-bold mb-2" style="font-size:2rem;letter-spacing:-0.5px;color:var(--text)">Check Monthly Pass</h2>
+        <p style="color:var(--muted);font-size:0.95rem;font-weight:500;margin-bottom:0">Verify pass validity and remaining trips for any registered vehicle</p>
+      </div>
+
+      <!-- Search Form -->
+      <div class="mb-4">
+        <label class="form-label" style="font-size:0.85rem;color:var(--muted);font-weight:600">Vehicle Registration Number</label>
+        <div class="input-group">
+          <input type="text" id="vehInput" class="form-control form-control-lg px-3" placeholder="e.g. KA01AB1234" style="border-radius:12px 0 0 12px;text-transform:uppercase;font-weight:700;letter-spacing:1px">
+          <button class="btn btn-action px-4" id="checkBtn" onclick="checkPassStatus()" style="border-radius:0 12px 12px 0;font-weight:700">
+            Check Status
+          </button>
+        </div>
+      </div>
+
+      <!-- Error / Empty Alert -->
+      <div id="statusAlert" class="alert alert-warning text-center py-3 d-none" style="font-size:0.95rem;border-radius:14px;font-weight:600">
+        No Active Monthly Pass Found.
+      </div>
+
+      <!-- Pass Status Result Card -->
+      <div id="resultCard" class="d-none">
+        <div class="pass-details-box text-start my-3" style="background:#fff">
+          <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom">
+            <span style="color:var(--muted);font-size:0.85rem;font-weight:600">Vehicle Number:</span>
+            <strong class="fs-5 text-primary" id="resVehNum">—</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color:var(--muted);font-size:0.85rem">Pass Status:</span>
+            <span class="badge bg-success px-3 py-1" style="border-radius:8px" id="resStatus">Active</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color:var(--muted);font-size:0.85rem">Trips Remaining:</span>
+            <strong class="text-success fs-6" id="resRemaining">—</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color:var(--muted);font-size:0.85rem">Total Trips:</span>
+            <strong style="color:var(--text)" id="resTotal">25 Trips</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2">
+            <span style="color:var(--muted);font-size:0.85rem">Expiry Date:</span>
+            <strong style="color:var(--text)" id="resExpiry">—</strong>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="color:var(--muted);font-size:0.85rem">Payment Status:</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="border-radius:6px" id="resPayment">Paid</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="text-center mt-4">
+        <a href="/buy-monthly-pass" class="text-decoration-none fw-bold" style="color:var(--accent);font-size:0.9rem">
+          Need a pass? Buy Monthly Pass →
+        </a>
+      </div>
+    </div>
+  </main>
+
+  <!-- JS Logic -->
+  <script>
+    async function checkPassStatus() {
+      const vehInput = document.getElementById('vehInput').value.trim();
+      const alertEl = document.getElementById('statusAlert');
+      const cardEl = document.getElementById('resultCard');
+      const checkBtn = document.getElementById('checkBtn');
+
+      alertEl.classList.add('d-none');
+      cardEl.classList.add('d-none');
+
+      if (!vehInput) {
+        alertEl.textContent = 'Please enter a vehicle registration number.';
+        alertEl.classList.remove('d-none');
+        return;
+      }
+
+      checkBtn.disabled = true;
+      checkBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Checking...';
+
+      try {
+        const res = await fetch('/api/public/check-pass', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ vehicle_number: vehInput })
+        });
+        const data = await res.json();
+        checkBtn.disabled = false;
+        checkBtn.textContent = 'Check Status';
+
+        if (data.success && data.pass) {
+          const p = data.pass;
+          document.getElementById('resVehNum').textContent = p.vehicle_number;
+          
+          const statusBadge = document.getElementById('resStatus');
+          statusBadge.textContent = p.pass_status;
+          statusBadge.className = `badge px-3 py-1 ${p.pass_status === 'Active' ? 'bg-success' : 'bg-danger'}`;
+
+          const remainingEl = document.getElementById('resRemaining');
+          remainingEl.textContent = `${p.trips_remaining} / ${p.total_trips}`;
+          remainingEl.className = p.trips_remaining > 0 ? 'text-success fs-6 fw-bold' : 'text-danger fs-6 fw-bold';
+
+          document.getElementById('resTotal').textContent = `${p.total_trips} Trips`;
+          document.getElementById('resExpiry').textContent = p.expiry_date;
+          document.getElementById('resPayment').textContent = p.payment_status;
+
+          cardEl.classList.remove('d-none');
+        } else {
+          alertEl.textContent = data.message || 'No Active Monthly Pass Found.';
+          alertEl.classList.remove('d-none');
+        }
+      } catch (e) {
+        checkBtn.disabled = false;
+        checkBtn.textContent = 'Check Status';
+        alertEl.textContent = 'Error checking pass status. Please try again.';
+        alertEl.classList.remove('d-none');
+      }
+    }
+
+    document.getElementById('vehInput').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') checkPassStatus();
+    });
+
+    document.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+    });
+  </script>
+</body>
+
+</html>

@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager, UserMixin, login_user, login_required, logout_user, current_user
 from werkzeug.security import generate_password_hash, check_password_hash
 from functools import wraps
-from datetime import datetime
+from datetime import datetime, timedelta
 import pandas as pd
 import numpy as np
 import joblib
@@ -61,6 +61,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     role          = db.Column(db.String(20), nullable=False, default='worker')
     # Roles: 'main_admin', 'company_admin', 'worker'
+    user_category = db.Column(db.String(50), default='normal')
     company_id    = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
     is_active     = db.Column(db.Boolean, default=True)
     created_at    = db.Column(db.DateTime, default=datetime.utcnow)
@@ -99,6 +100,7 @@ class TollBooth(db.Model):
     location   = db.Column(db.String(150))
     latitude   = db.Column(db.Float)
     longitude  = db.Column(db.Float)
+    num_lanes  = db.Column(db.Integer, nullable=True, default=1)
     status     = db.Column(db.String(50), default='Online')  # 'Online', 'Offline', 'Maintenance'
     highway_id = db.Column(db.Integer, db.ForeignKey('highway.id'), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -129,20 +131,190 @@ class GeneratedPin(db.Model):
     is_used    = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
-class Receipt(db.Model):
+class MonthlyPass(db.Model):
     id             = db.Column(db.Integer, primary_key=True)
-    receipt_id     = db.Column(db.String(50), unique=True, nullable=False)
-    vehicle_number = db.Column(db.String(20), nullable=False)
-    vehicle_type   = db.Column(db.String(50), nullable=False)
-    booth_id       = db.Column(db.Integer, db.ForeignKey('toll_booth.id'), nullable=False)
-    payment_mode   = db.Column(db.String(20), nullable=False)
-    amount         = db.Column(db.Integer, nullable=False)
-    notes          = db.Column(db.String(500))
+    user_id        = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    vehicle_number = db.Column(db.String(20), nullable=True)
+    mobile_number  = db.Column(db.String(20), nullable=True)
+    pass_type      = db.Column(db.String(50), default='Monthly Pass')
+    price          = db.Column(db.Integer, default=1200)
+    start_date     = db.Column(db.DateTime, default=datetime.utcnow)
+    expiry_date    = db.Column(db.DateTime, nullable=False)
+    trips_used     = db.Column(db.Integer, default=0)
+    max_trips      = db.Column(db.Integer, default=25)
+    payment_status = db.Column(db.String(30), default='Paid')
+    status         = db.Column(db.String(30), default='Active')
     created_at     = db.Column(db.DateTime, default=datetime.utcnow)
-    company_id     = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
+
+    user = db.relationship('User', backref='passes')
+
+    def is_valid(self):
+        return self.status == 'Active' and datetime.utcnow() <= self.expiry_date
+
+    def remaining_trips(self):
+        return max(0, self.max_trips - self.trips_used)
+
+class Receipt(db.Model):
+    id               = db.Column(db.Integer, primary_key=True)
+    receipt_id       = db.Column(db.String(50), unique=True, nullable=False)
+    vehicle_number   = db.Column(db.String(20), nullable=False)
+    vehicle_type     = db.Column(db.String(50), nullable=False)
+    booth_id         = db.Column(db.Integer, db.ForeignKey('toll_booth.id'), nullable=False)
+    payment_mode     = db.Column(db.String(20), nullable=False)
+    amount           = db.Column(db.Integer, nullable=False)
+    pricing_category = db.Column(db.String(80), nullable=True)
+    pass_id          = db.Column(db.Integer, db.ForeignKey('monthly_pass.id'), nullable=True)
+    notes            = db.Column(db.String(500))
+    created_at       = db.Column(db.DateTime, default=datetime.utcnow)
+    company_id       = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=True)
 
     booth = db.relationship('TollBooth', backref='receipts')
     company = db.relationship('Company', backref='receipts')
+    monthly_pass = db.relationship('MonthlyPass', backref='receipts')
+
+DEFAULT_PRICING = {
+    'normal_user_toll': 80,
+    'daily_user_toll': 50,
+    'monthly_pass_price': 1200,
+    'monthly_pass_max_trips': 25,
+    'monthly_pass_validity_days': 30,
+    'govt_vip_toll': 0,
+    'emergency_toll': 0
+}
+
+def get_pricing_settings():
+    settings = dict(DEFAULT_PRICING)
+    try:
+        all_s = SystemSetting.query.all()
+        for s in all_s:
+            if s.key in settings:
+                settings[s.key] = int(s.value)
+    except Exception as e:
+        print("Failed to fetch pricing settings:", e)
+    return settings
+
+def calculate_ai_dynamic_toll(congestion_pred, volume, speed, hour=9, weather=0, rain=0):
+    """
+    SMART AI DYNAMIC TOLL PRICING RULES:
+    Base Toll = ₹80
+    Calculates Dynamic Toll using:
+    - Traffic Volume
+    - Congestion Level
+    - Average Speed
+    - Time of Day
+    - Weather
+    
+    AI Dynamic Pricing Rules (Base / Normal User):
+    - Low Traffic: ₹60
+    - Normal Traffic: ₹80
+    - High Traffic: ₹100
+    - Very High Traffic: ₹120
+    """
+    is_rush = (7 <= hour <= 9) or (16 <= hour <= 18)
+    is_bad_weather = (weather >= 2 or rain > 0)
+
+    if volume >= 5000 or (volume >= 4000 and (speed < 25 or is_rush or is_bad_weather)) or (congestion_pred == 2 and volume >= 4500):
+        traffic_level = 'Very High'
+        dynamic_toll = 120
+    elif congestion_pred == 2 or volume >= 3500 or (volume >= 2800 and speed < 35):
+        traffic_level = 'High'
+        dynamic_toll = 100
+    elif congestion_pred == 0 or (volume < 1800 and speed >= 50):
+        traffic_level = 'Low'
+        dynamic_toll = 60
+    else:
+        traffic_level = 'Normal'
+        dynamic_toll = 80
+
+    return dynamic_toll, traffic_level
+
+def calculate_toll_fare(user_category='normal', vehicle_type='Car / Jeep / Van', vehicle_number=None, user_id=None, hour=9, volume=3000, speed=50, weather=0, rain=0, congestion_pred=1):
+    dynamic_toll, traffic_level = calculate_ai_dynamic_toll(congestion_pred, volume, speed, hour, weather, rain)
+    daily_rates = {'Low': 40, 'Normal': 50, 'High': 70, 'Very High': 90}
+    daily_rate = daily_rates[traffic_level]
+
+    v_type_lower = (vehicle_type or '').lower()
+    cat_lower = (user_category or '').lower()
+
+    # 1. Emergency Check
+    if cat_lower == 'emergency' or any(k in v_type_lower for k in ['ambulance', 'fire', 'police', 'emergency']):
+        return {
+            'amount': 0,
+            'category': 'Emergency Vehicle',
+            'discount_applied': '100% Emergency Exemption',
+            'explanation': 'Toll Fee: ₹0 (Authorized Emergency Vehicle Exemption)',
+            'pass_applied': False
+        }
+
+    # 2. Government / VIP Check
+    if cat_lower in ['government_vip', 'govt_vip', 'vip'] or any(k in v_type_lower for k in ['government', 'vip', 'govt']):
+        return {
+            'amount': 0,
+            'category': 'Government/VIP Vehicle',
+            'discount_applied': 'Government Policy Exemption',
+            'explanation': 'Toll Fee: ₹0 (Government/VIP Exemption)',
+            'pass_applied': False
+        }
+
+    # 3. Monthly Pass Check (by user_id or vehicle_number)
+    active_pass = None
+    if user_id:
+        active_pass = MonthlyPass.query.filter(
+            MonthlyPass.user_id == user_id,
+            MonthlyPass.expiry_date >= datetime.utcnow()
+        ).order_by(MonthlyPass.created_at.desc()).first()
+
+    if not active_pass and vehicle_number:
+        active_pass = MonthlyPass.query.filter(
+            MonthlyPass.vehicle_number == vehicle_number,
+            MonthlyPass.expiry_date >= datetime.utcnow()
+        ).order_by(MonthlyPass.created_at.desc()).first()
+
+    if active_pass:
+        remaining = max(0, active_pass.max_trips - active_pass.trips_used)
+        if remaining > 0 and active_pass.status == 'Active':
+            return {
+                'amount': 0,
+                'category': f"Monthly Pass (Remaining Trips: {remaining})",
+                'discount_applied': 'Monthly Pass Active',
+                'explanation': f"Monthly Pass Active &bull; Trips Remaining: {remaining} &bull; Current Charge = ₹0",
+                'pass_applied': True,
+                'pass_id': active_pass.id,
+                'trips_used': active_pass.trips_used,
+                'remaining_trips': remaining,
+                'expiry_date': active_pass.expiry_date.strftime('%d %b %Y')
+            }
+        else:
+            return {
+                'amount': dynamic_toll,
+                'category': 'Monthly Pass Active (Trips Remaining = 0 -> Full AI Dynamic Toll)',
+                'discount_applied': 'None (0 Trips Remaining)',
+                'explanation': f"Monthly Pass Active &bull; Trips Remaining = 0 &bull; Dynamic Toll Applied: ₹{dynamic_toll}",
+                'pass_applied': True,
+                'pass_id': active_pass.id,
+                'trips_used': active_pass.trips_used,
+                'remaining_trips': 0,
+                'expiry_date': active_pass.expiry_date.strftime('%d %b %Y')
+            }
+
+    # 4. Daily User Check
+    if cat_lower in ['daily_commuter', 'daily']:
+        return {
+            'amount': daily_rate,
+            'category': 'Daily User',
+            'discount_applied': 'Daily Commuter Rate',
+            'explanation': f"Daily User &bull; Applied Rate: ₹{daily_rate}",
+            'pass_applied': False
+        }
+
+    # 5. Default: Normal User
+    return {
+        'amount': dynamic_toll,
+        'category': 'Normal User',
+        'discount_applied': 'None',
+        'explanation': f"Normal User &bull; Charge: ₹{dynamic_toll}",
+        'pass_applied': False
+    }
 
 def get_base_toll():
     try:
@@ -187,9 +359,58 @@ def seed_main_admin():
             print("         Email:    admin@nhai.gov.in")
             print("         Password: Admin@1234")
 
+        # Seed Company Admin yv@gmail.com
+        comp = Company.query.filter_by(name='YV Toll Operations').first()
+        if not comp:
+            comp = Company(
+                name='YV Toll Operations',
+                company_type='Private Concessionaire',
+                gst_number='29ABCDE1234F1Z5',
+                address='Highway Plaza, Sector 12',
+                state='Maharashtra',
+                security_pin='12345678',
+                is_approved=True
+            )
+            db.session.add(comp)
+            db.session.commit()
+
+        user_yv = User.query.filter_by(email='yv@gmail.com').first()
+        if not user_yv:
+            user_yv = User(
+                full_name='YV Admin',
+                email='yv@gmail.com',
+                role='company_admin',
+                company_id=comp.id,
+                is_active=True
+            )
+            user_yv.set_password('Admin@1234')
+            db.session.add(user_yv)
+            db.session.commit()
+            print("  [AUTH] Default Company Admin seeded:")
+            print("         Email:    yv@gmail.com")
+            print("         Password: Admin@1234")
+
 def seed_highways_and_booths():
     with app.app_context():
         db.create_all()
+
+        # Migrate monthly_pass table columns if needed
+        try:
+            from sqlalchemy import inspect, text
+            inspector = inspect(db.engine)
+            if 'monthly_pass' in inspector.get_table_names():
+                cols = [c['name'] for c in inspector.get_columns('monthly_pass')]
+                with db.engine.connect() as conn:
+                    if 'mobile_number' not in cols:
+                        conn.execute(text("ALTER TABLE monthly_pass ADD COLUMN mobile_number VARCHAR(20)"))
+                    if 'pass_type' not in cols:
+                        conn.execute(text("ALTER TABLE monthly_pass ADD COLUMN pass_type VARCHAR(50) DEFAULT 'Monthly Pass'"))
+                    if 'payment_status' not in cols:
+                        conn.execute(text("ALTER TABLE monthly_pass ADD COLUMN payment_status VARCHAR(30) DEFAULT 'Paid'"))
+                    conn.commit()
+        except Exception as _e:
+            print("Migration warning:", _e)
+
         # Seed Settings
         if not SystemSetting.query.filter_by(key='base_toll_low').first():
             db.session.add(SystemSetting(key='base_toll_low', value='50'))
@@ -572,13 +793,9 @@ def create_worker():
 
 
 # ─── Existing ML Routes (now protected) ──────────────────────────────────────
-def calculate_toll(congestion, volume, speed):
-    base = get_base_toll()[congestion]
-    if volume > 5000:   mult = 1.5
-    elif volume > 3500: mult = 1.2
-    else:               mult = 1.0
-    if speed < 20: mult += 0.3
-    return round(base * mult)
+def calculate_toll(congestion, volume, speed, hour=9, weather=0, rain=0):
+    dynamic_toll, _ = calculate_ai_dynamic_toll(congestion, volume, speed, hour, weather, rain)
+    return dynamic_toll
 
 @app.route('/')
 @login_required
@@ -625,9 +842,14 @@ def predict():
 
     pred  = int(model.predict(features)[0])
     proba = model.predict_proba(features)[0].tolist()
-    toll  = calculate_toll(pred, volume, speed)
+
+    toll, traffic_level = calculate_ai_dynamic_toll(pred, volume, speed, hour, weather, rain)
     label = LABELS[pred]
     color = {'Low':'success','Medium':'warning','High':'danger'}[label]
+
+    # Customer Category Rates
+    daily_rates = {'Low': 40, 'Normal': 50, 'High': 70, 'Very High': 90}
+    daily_toll = daily_rates[traffic_level]
 
     try:
         log_entry = PredictionLog(
@@ -647,14 +869,195 @@ def predict():
     except Exception as e:
         print("Error logging prediction:", e)
 
+    # Search Database when vehicle_number is checked
+    veh_num = (d.get('vehicle_number') or '').strip().upper()
+    now = datetime.utcnow()
+    p = None
+    if veh_num:
+        p = MonthlyPass.query.filter(
+            MonthlyPass.vehicle_number == veh_num
+        ).order_by(MonthlyPass.created_at.desc()).first()
+
+    if p and p.expiry_date and now <= p.expiry_date:
+        remaining = max(0, (p.max_trips or 25) - (p.trips_used or 0))
+        is_active = remaining > 0 and p.status == 'Active'
+        pass_info = {
+            'has_pass': True,
+            'vehicle_number': p.vehicle_number,
+            'status': 'Active' if is_active else 'Trips Exhausted',
+            'remaining_trips': remaining,
+            'total_trips': p.max_trips or 25,
+            'expiry_date': p.expiry_date.strftime('%d %b %Y'),
+            'ai_recommended_toll': toll,
+            'monthly_pass_benefit': toll if is_active else 0,
+            'final_charge': 0 if is_active else toll,
+            'next_remaining': max(0, remaining - 1) if is_active else 0,
+            'detected_category': 'monthly_active' if is_active else 'monthly_exhausted'
+        }
+    else:
+        user_obj = None
+        if p and p.user_id:
+            user_obj = db.session.get(User, p.user_id)
+        if not user_obj and current_user and current_user.is_authenticated:
+            user_obj = current_user
+
+        is_daily = False
+        if user_obj and getattr(user_obj, 'user_category', None) in ['daily', 'daily_commuter']:
+            is_daily = True
+        elif p and getattr(p, 'pass_type', '') and 'daily' in p.pass_type.lower():
+            is_daily = True
+
+        detected_cat = 'daily' if is_daily else 'normal'
+        pass_info = {
+            'has_pass': False,
+            'vehicle_number': veh_num,
+            'status': 'Daily Commuter Rate' if is_daily else 'No Active Monthly Pass Found',
+            'category': 'Daily User' if is_daily else 'Normal User',
+            'detected_category': detected_cat,
+            'ai_recommended_toll': toll,
+            'final_charge': daily_toll if is_daily else toll
+        }
+
+    daily_discount = toll - daily_toll
+
     return jsonify({
-        'congestion': label, 'toll_price': toll,
-        'confidence': round(max(proba)*100, 1), 'color': color,
+        'congestion': label,
+        'traffic_level': traffic_level,
+        'toll_price': toll, # Recommended Dynamic Toll Price
+        'daily_commuter_toll': daily_toll,
+        'daily_discount': daily_discount,
+        'monthly_pass_toll': 0,
+        'confidence': round(max(proba)*100, 1),
+        'color': color,
+        'pass_info': pass_info,
         'proba': {
             'Low':    round(proba[0]*100,1),
             'Medium': round(proba[1]*100,1),
             'High':   round(proba[2]*100,1)
         }
+    })
+
+@app.route('/api/simulate-crossing', methods=['POST'])
+@login_required
+def api_simulate_crossing():
+    data = request.json or {}
+    veh_num = (data.get('vehicle_number') or '').strip().upper()
+    user_cat = (data.get('user_category') or getattr(current_user, 'user_category', 'normal')).strip().lower()
+    veh_type = (data.get('vehicle_type') or 'Car / Jeep / Van').strip()
+
+    hour = int(data.get('hour', 9))
+    volume = int(data.get('traffic_volume', 3000))
+    speed = float(data.get('avg_speed', 50))
+    weather = int(data.get('weather_encoded', 0))
+    rain = float(data.get('rain_1h', 0))
+
+    toll, traffic_level = calculate_ai_dynamic_toll(1, volume, speed, hour, weather, rain)
+    daily_rates = {'Low': 40, 'Normal': 50, 'High': 70, 'Very High': 90}
+    daily_toll = daily_rates[traffic_level]
+
+    now = datetime.utcnow()
+    pass_record = None
+    if veh_num:
+        pass_record = MonthlyPass.query.filter(
+            MonthlyPass.vehicle_number == veh_num
+        ).order_by(MonthlyPass.created_at.desc()).first()
+
+    monthly_pass_used = "NO"
+    trip_deducted = "NO"
+    category_label = "Normal User"
+    final_charge = toll
+    remaining_trips = 0
+    total_trips = 25
+    pass_status = "No Active Pass Found"
+
+    if pass_record and pass_record.expiry_date and now <= pass_record.expiry_date:
+        total_trips = pass_record.max_trips or 25
+        curr_remaining = max(0, total_trips - (pass_record.trips_used or 0))
+
+        if curr_remaining > 0 and pass_record.status == 'Active':
+            # CASE 1: Monthly Pass Active (Trips > 0) -> Deduct 1 trip!
+            pass_record.trips_used = (pass_record.trips_used or 0) + 1
+            if pass_record.trips_used >= total_trips:
+                pass_record.status = 'Exhausted'
+
+            db.session.add(pass_record)
+            db.session.commit()
+
+            monthly_pass_used = "YES"
+            trip_deducted = "YES"
+            category_label = "Monthly Pass User"
+            final_charge = 0
+            remaining_trips = max(0, total_trips - pass_record.trips_used)
+            pass_status = "Active" if remaining_trips > 0 else "Trips Exhausted"
+        else:
+            # CASE 3: Monthly Pass Active BUT Remaining Trips = 0
+            monthly_pass_used = "NO"
+            trip_deducted = "NO"
+            category_label = "Monthly Pass User"
+            final_charge = toll
+            remaining_trips = 0
+            pass_status = "Trips Exhausted"
+    elif pass_record and pass_record.expiry_date and now > pass_record.expiry_date:
+        # CASE 2: Monthly Pass Expired
+        monthly_pass_used = "NO"
+        trip_deducted = "NO"
+        category_label = "Monthly Pass User"
+        final_charge = toll
+        remaining_trips = 0
+        pass_status = "Pass Expired"
+    elif user_cat in ['daily_commuter', 'daily']:
+        # CASE 5: Daily User
+        monthly_pass_used = "NO"
+        trip_deducted = "NO"
+        category_label = "Daily User"
+        final_charge = daily_toll
+        pass_status = "N/A"
+    else:
+        # CASE 4: Normal User
+        monthly_pass_used = "NO"
+        trip_deducted = "NO"
+        category_label = "Normal User"
+        final_charge = toll
+        pass_status = "N/A"
+
+    # Create Receipt log for toll plaza crossing
+    booth = TollBooth.query.first()
+    booth_id = booth.id if booth else 1
+
+    max_id_receipt = Receipt.query.order_by(Receipt.id.desc()).first()
+    next_id = (max_id_receipt.id + 1) if max_id_receipt else 1
+    receipt_id = f"RCPT-2026-{next_id:06d}"
+
+    rcpt = Receipt(
+        receipt_id=receipt_id,
+        vehicle_number=veh_num or 'SIMULATED',
+        vehicle_type=veh_type,
+        booth_id=booth_id,
+        payment_mode='FASTag' if monthly_pass_used == "YES" else 'Cash',
+        amount=final_charge,
+        pricing_category=category_label,
+        pass_id=pass_record.id if pass_record else None,
+        notes=f"Simulated Toll Crossing ({traffic_level} Traffic)",
+        company_id=getattr(current_user, 'company_id', None)
+    )
+    db.session.add(rcpt)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Toll Crossing Successful',
+        'vehicle_number': veh_num or 'N/A',
+        'traffic_level': traffic_level,
+        'ai_toll': toll,
+        'vehicle_category': category_label,
+        'monthly_pass_used': monthly_pass_used,
+        'trip_deducted': trip_deducted,
+        'remaining_trips': remaining_trips,
+        'total_trips': total_trips,
+        'current_charge': final_charge,
+        'pass_status': pass_status,
+        'date_time': now.strftime('%d %b %Y %I:%M %p'),
+        'db_updated': True
     })
 
 @app.route('/dashboard-data')
@@ -727,10 +1130,11 @@ def _simulated_booth_data():
     else:
         booths_list = [{
             'id': b.id, 'name': b.name,
-            'location': b.location,
-            'lat': b.latitude, 'lng': b.longitude,
-            'status': b.status,
-            'highway_id': b.highway_id
+            'location': b.location or 'Highway Location',
+            'lat': b.latitude or 0.0, 'lng': b.longitude or 0.0,
+            'status': b.status or 'Online',
+            'highway_id': b.highway_id,
+            'highway_code': b.highway.code if b.highway else 'N/A'
         } for b in booths]
 
     num_booths = len(booths_list)
@@ -791,6 +1195,7 @@ def _simulated_booth_data():
             'congestion': cong, 'congestion_num': cong_num,
             'status': status,
             'highway_id': booth.get('highway_id'),
+            'highway_code': booth.get('highway_code', 'N/A'),
             'current_toll': calculate_toll(cong_num, int(hourly_volumes.get(hour_now, 3000)), 45)
         })
 
@@ -798,7 +1203,7 @@ def _simulated_booth_data():
     top5 = [{'name': b['name'][:28], 'revenue': b['revenue']} for b in booth_revenues_sorted[:5]]
 
     high_cong_count = sum(1 for b in booth_revenues if b['congestion'] == 'High')
-    active_count    = sum(1 for b in booth_revenues if b['status'] == 'Online')
+    active_count    = min(sum(1 for b in booth_revenues if b['status'] == 'Online'), num_booths)
 
     return {
         'today_revenue':         today_revenue,
@@ -1146,28 +1551,41 @@ def api_get_receipts():
 
 @app.route('/api/receipts', methods=['POST'])
 @login_required
-@roles_required('worker')
+@roles_required('worker', 'company_admin', 'main_admin')
 def api_create_receipt():
-    data = request.json
+    data = request.json or {}
     veh_num = data.get('vehicle_number', '').strip().upper()
     veh_type = data.get('vehicle_type', '').strip()
     booth_id = data.get('booth_id')
     pay_mode = data.get('payment_mode', '').strip()
-    amount = data.get('amount')
+    user_cat = data.get('user_category', getattr(current_user, 'user_category', 'normal')).strip()
     notes = data.get('notes', '').strip()
 
-    if not all([veh_num, veh_type, booth_id, pay_mode, amount]):
-        return jsonify({'success': False, 'message': 'All fields are required.'}), 400
+    if not all([veh_num, veh_type, booth_id, pay_mode]):
+        return jsonify({'success': False, 'message': 'All required fields must be provided.'}), 400
 
     try:
         booth_id = int(booth_id)
-        amount = int(amount)
     except ValueError:
-        return jsonify({'success': False, 'message': 'Invalid input formats.'}), 400
+        return jsonify({'success': False, 'message': 'Invalid toll booth selected.'}), 400
 
     booth = db.session.get(TollBooth, booth_id)
     if not booth:
         return jsonify({'success': False, 'message': 'Invalid toll booth selected.'}), 400
+
+    # Calculate fare using Final Pricing Model
+    fare_info = calculate_toll_fare(user_category=user_cat, vehicle_type=veh_type, vehicle_number=veh_num, user_id=current_user.id)
+    amount = fare_info['amount']
+
+    # Update Monthly Pass if applicable
+    pass_id = fare_info.get('pass_id')
+    if pass_id and amount == 0:
+        active_pass = db.session.get(MonthlyPass, pass_id)
+        if active_pass and active_pass.trips_used < active_pass.max_trips:
+            active_pass.trips_used += 1
+            if active_pass.trips_used >= active_pass.max_trips:
+                active_pass.status = 'Exhausted'
+            db.session.add(active_pass)
 
     max_id_receipt = Receipt.query.order_by(Receipt.id.desc()).first()
     next_id = (max_id_receipt.id + 1) if max_id_receipt else 1
@@ -1180,6 +1598,8 @@ def api_create_receipt():
         booth_id=booth_id,
         payment_mode=pay_mode,
         amount=amount,
+        pricing_category=fare_info['category'],
+        pass_id=pass_id,
         notes=notes or None,
         company_id=current_user.company_id
     )
@@ -1188,14 +1608,246 @@ def api_create_receipt():
 
     return jsonify({
         'success': True,
-        'message': f'Receipt {receipt_id} generated successfully.',
+        'message': f"Receipt {receipt_id} generated successfully. Applied Fare: ₹{amount} ({fare_info['category']})",
         'receipt': {
             'receipt_id': receipt_id,
             'vehicle_number': veh_num,
             'amount': amount,
+            'pricing_category': fare_info['category'],
             'payment_mode': pay_mode,
             'created_at': rcpt.created_at.strftime('%d-%m-%Y %I:%M %p')
         }
+    })
+
+# ─── Monthly Pass & Pricing Category APIs ───────────────────────────────────────
+@app.route('/api/monthly-pass/status', methods=['GET'])
+@login_required
+def api_pass_status():
+    user = current_user
+    settings = get_pricing_settings()
+    
+    active_pass = MonthlyPass.query.filter(
+        MonthlyPass.user_id == user.id,
+        MonthlyPass.expiry_date >= datetime.utcnow()
+    ).order_by(MonthlyPass.created_at.desc()).first()
+
+    if active_pass:
+        trips_used = active_pass.trips_used
+        max_trips = active_pass.max_trips
+        remaining = max(0, max_trips - trips_used)
+        if trips_used >= max_trips:
+            status_label = 'Exhausted'
+            trip_rate = settings['normal_user_toll']
+        else:
+            status_label = 'Active'
+            trip_rate = 0
+        
+        return jsonify({
+            'has_pass': True,
+            'status': status_label,
+            'user_category': user.user_category,
+            'trips_used': trips_used,
+            'max_trips': max_trips,
+            'remaining_trips': remaining,
+            'pass_price': active_pass.price,
+            'expiry_date': active_pass.expiry_date.strftime('%d %b %Y'),
+            'days_remaining': max(0, (active_pass.expiry_date - datetime.utcnow()).days),
+            'trip_rate': trip_rate,
+            'overage_rate': settings['normal_user_toll'],
+            'vehicle_number': active_pass.vehicle_number or 'N/A'
+        })
+    else:
+        latest_expired = MonthlyPass.query.filter(
+            MonthlyPass.user_id == user.id,
+            MonthlyPass.expiry_date < datetime.utcnow()
+        ).order_by(MonthlyPass.created_at.desc()).first()
+
+        if latest_expired:
+            if user.user_category in ['daily_commuter', 'daily']:
+                rate = settings['daily_user_toll']
+            elif user.user_category in ['emergency', 'government_vip']:
+                rate = settings['govt_vip_toll'] if user.user_category == 'government_vip' else settings['emergency_toll']
+            else:
+                rate = settings['normal_user_toll']
+
+            return jsonify({
+                'has_pass': True,
+                'status': 'Expired',
+                'user_category': user.user_category,
+                'trips_used': latest_expired.trips_used,
+                'max_trips': latest_expired.max_trips,
+                'remaining_trips': 0,
+                'pass_price': latest_expired.price,
+                'expiry_date': latest_expired.expiry_date.strftime('%d %b %Y'),
+                'days_remaining': 0,
+                'trip_rate': rate,
+                'overage_rate': settings['normal_user_toll'],
+                'vehicle_number': latest_expired.vehicle_number or 'N/A'
+            })
+        else:
+            if user.user_category in ['daily_commuter', 'daily']:
+                rate = settings['daily_user_toll']
+            elif user.user_category in ['emergency', 'government_vip']:
+                rate = settings['govt_vip_toll'] if user.user_category == 'government_vip' else settings['emergency_toll']
+            else:
+                rate = settings['normal_user_toll']
+
+            return jsonify({
+                'has_pass': False,
+                'status': 'No Active Pass',
+                'user_category': user.user_category,
+                'trips_used': 0,
+                'max_trips': settings['monthly_pass_max_trips'],
+                'remaining_trips': 0,
+                'pass_price': settings['monthly_pass_price'],
+                'expiry_date': 'N/A',
+                'days_remaining': 0,
+                'trip_rate': rate,
+                'overage_rate': settings['normal_user_toll'],
+                'vehicle_number': 'N/A'
+            })
+
+@app.route('/api/monthly-pass/purchase', methods=['POST'])
+@login_required
+def api_purchase_pass():
+    data = request.json or {}
+    veh_num = data.get('vehicle_number', '').strip().upper()
+    settings = get_pricing_settings()
+    
+    price = settings['monthly_pass_price']
+    max_trips = settings['monthly_pass_max_trips']
+    validity_days = settings['monthly_pass_validity_days']
+    
+    start_date = datetime.utcnow()
+    expiry_date = start_date + timedelta(days=validity_days)
+
+    new_pass = MonthlyPass(
+        user_id=current_user.id,
+        vehicle_number=veh_num or None,
+        price=price,
+        start_date=start_date,
+        expiry_date=expiry_date,
+        trips_used=0,
+        max_trips=max_trips,
+        status='Active'
+    )
+    db.session.add(new_pass)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': f"Monthly Pass purchased successfully for ₹{price:,}! Valid for {max_trips} trips over {validity_days} days.",
+        'pass': {
+            'id': new_pass.id,
+            'price': price,
+            'max_trips': max_trips,
+            'remaining_trips': max_trips,
+            'expiry_date': expiry_date.strftime('%d %b %Y')
+        }
+    })
+
+@app.route('/api/admin/monthly-passes', methods=['GET'])
+@login_required
+@roles_required('main_admin', 'company_admin')
+def api_admin_monthly_passes():
+    search = request.args.get('search', '').strip()
+    status_filter = request.args.get('status', '').strip()
+    payment_filter = request.args.get('payment_status', '').strip()
+
+    query = MonthlyPass.query
+
+    if search:
+        query = query.filter(MonthlyPass.vehicle_number.ilike(f"%{search}%"))
+    if payment_filter and payment_filter != 'All':
+        query = query.filter(MonthlyPass.payment_status == payment_filter)
+
+    passes = query.order_by(MonthlyPass.created_at.desc()).all()
+
+    now = datetime.utcnow()
+    result = []
+    for p in passes:
+        is_active = p.status == 'Active' and now <= p.expiry_date and p.trips_used < p.max_trips
+        status_label = 'Active' if is_active else ('Exhausted' if p.trips_used >= p.max_trips else 'Expired')
+
+        if status_filter and status_filter != 'All':
+            if status_filter == 'Active' and status_label != 'Active':
+                continue
+            if status_filter == 'Expired' and status_label == 'Active':
+                continue
+        
+        result.append({
+            'id': p.id,
+            'pass_id': f"PASS-2026-{p.id:05d}",
+            'vehicle_number': p.vehicle_number or 'N/A',
+            'pass_type': p.pass_type or 'Monthly Pass',
+            'status': status_label,
+            'total_trips': p.max_trips or 25,
+            'remaining_trips': max(0, (p.max_trips or 25) - (p.trips_used or 0)),
+            'trips_used': p.trips_used or 0,
+            'purchase_date': p.start_date.strftime('%d-%m-%Y %I:%M %p') if p.start_date else 'N/A',
+            'expiry_date': p.expiry_date.strftime('%d-%m-%Y') if p.expiry_date else 'N/A',
+            'payment_status': p.payment_status or 'Paid',
+            'price': p.price or 1200
+        })
+
+    # Overall Summary KPIs across all passes
+    all_passes = MonthlyPass.query.all()
+    total_count = len(all_passes)
+    active_count = sum(1 for p in all_passes if p.status == 'Active' and now <= p.expiry_date and p.trips_used < p.max_trips)
+    expired_count = sum(1 for p in all_passes if now > p.expiry_date or p.status == 'Expired' or p.trips_used >= p.max_trips)
+    total_rev = sum((p.price or 1200) for p in all_passes if (p.payment_status or 'Paid') == 'Paid')
+
+    return jsonify({
+        'success': True,
+        'passes': result,
+        'total': len(result),
+        'summary': {
+            'total_passes': total_count,
+            'active_passes': active_count,
+            'expired_passes': expired_count,
+            'total_revenue': total_rev
+        }
+    })
+
+@app.route('/api/admin/monthly-passes/<int:pass_id>', methods=['DELETE'])
+@login_required
+@roles_required('main_admin', 'company_admin')
+def api_admin_delete_monthly_pass(pass_id):
+    pass_record = db.session.get(MonthlyPass, pass_id)
+    if not pass_record:
+        return jsonify({'success': False, 'message': 'Monthly pass not found.'}), 404
+
+    veh_num = pass_record.vehicle_number
+    db.session.delete(pass_record)
+    db.session.commit()
+    return jsonify({
+        'success': True,
+        'message': f'Monthly pass for vehicle {veh_num} deleted successfully.'
+    })
+
+@app.route('/api/user/category', methods=['POST'])
+@login_required
+def api_update_user_category():
+    data = request.json or {}
+    new_cat = data.get('category', '').strip().lower()
+    valid_cats = ['normal', 'daily_commuter', 'emergency', 'government_vip']
+    
+    if new_cat not in valid_cats:
+        return jsonify({'success': False, 'message': 'Invalid category selection.'}), 400
+        
+    current_user.user_category = new_cat
+    db.session.commit()
+    
+    cat_names = {
+        'normal': 'Normal User (₹80/trip)',
+        'daily_commuter': 'Daily Commuter (₹50/trip)',
+        'emergency': 'Emergency Vehicle (₹0/trip)',
+        'government_vip': 'Government/VIP (Configurable)'
+    }
+    return jsonify({
+        'success': True,
+        'message': f"Pricing category updated to: {cat_names[new_cat]}",
+        'category': new_cat
     })
 
 @app.route('/api/receipts/download/<int:receipt_id>', methods=['GET'])
@@ -1352,6 +2004,183 @@ def api_delete_pin(pin_id):
     return jsonify({'success': True, 'message': 'Unused security PIN deleted.'})
 
 
+
+# ─── Public Buy Monthly Pass Module ──────────────────────────────────────────
+
+@app.route('/buy-monthly-pass')
+def buy_monthly_pass_page():
+    """Public page allowing customers to purchase a monthly toll pass without account registration."""
+    return render_template('buy_pass.html')
+
+@app.route('/check-monthly-pass')
+def check_monthly_pass_page():
+    """Public page allowing customers to check monthly toll pass status by vehicle number."""
+    return render_template('check_pass.html')
+
+@app.route('/api/public/check-pass', methods=['POST'])
+def api_public_check_pass():
+    data = request.json or {}
+    veh_num = data.get('vehicle_number', '').strip().upper()
+    if not veh_num:
+        return jsonify({'success': False, 'message': 'Vehicle number is required.'}), 400
+
+    now = datetime.utcnow()
+    p = MonthlyPass.query.filter(
+        MonthlyPass.vehicle_number == veh_num
+    ).order_by(MonthlyPass.created_at.desc()).first()
+
+    if not p or (p.expiry_date and now > p.expiry_date):
+        return jsonify({'success': False, 'message': 'No Active Monthly Pass Found.'}), 404
+
+    is_active = p.status in ('Active', 'Exhausted') and now <= p.expiry_date
+    status_label = 'Active' if is_active else 'Expired'
+    remaining = max(0, (p.max_trips or 25) - (p.trips_used or 0))
+
+    return jsonify({
+        'success': True,
+        'pass': {
+            'vehicle_number': p.vehicle_number,
+            'pass_status': status_label,
+            'trips_remaining': remaining,
+            'total_trips': p.max_trips or 25,
+            'expiry_date': p.expiry_date.strftime('%d %b %Y') if p.expiry_date else 'N/A',
+            'payment_status': p.payment_status or 'Paid'
+        }
+    })
+
+@app.route('/api/public/verify-vehicle', methods=['POST'])
+def api_public_verify_vehicle():
+    """
+    Step 1: Vehicle Verification
+    Prototype Version: Verifies vehicle against local database (Receipt / MonthlyPass records).
+    
+    # FUTURE PRODUCTION INTEGRATION:
+    # Vehicle verification will integrate with the Government VAHAN API:
+    # Endpoint: GET https://vahan.parivahan.gov.in/api/v1/vehicle?registration_no={veh_num}
+    # Headers: { Authorization: "Bearer <VAHAN_API_KEY>" }
+    """
+    data = request.json or {}
+    veh_num = data.get('vehicle_number', '').strip().upper()
+    
+    if not veh_num:
+        return jsonify({'success': False, 'message': 'Please enter a vehicle registration number.'}), 400
+
+    # Local vehicle verification check against local DB records or valid format
+    exists_in_receipts = db.session.execute(
+        db.select(Receipt).filter(Receipt.vehicle_number == veh_num)
+    ).scalars().first()
+    
+    exists_in_passes = db.session.execute(
+        db.select(MonthlyPass).filter(MonthlyPass.vehicle_number == veh_num)
+    ).scalars().first()
+    
+    import re
+    is_valid_format = bool(re.match(r'^[A-Z]{2}[0-9]{1,2}[A-Z]{1,3}[0-9]{4}$', veh_num))
+
+    if exists_in_receipts or exists_in_passes or is_valid_format:
+        return jsonify({
+            'success': True,
+            'message': f'Vehicle {veh_num} verified successfully.',
+            'vehicle_number': veh_num
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'message': 'Vehicle not found.'
+        }), 404
+
+@app.route('/api/public/verify-otp', methods=['POST'])
+def api_public_verify_otp():
+    """
+    Step 2: Mobile & OTP Verification
+    Prototype Version: Simulates OTP verification using demo OTP '1234' or '123456'.
+    
+    # FUTURE PRODUCTION INTEGRATION:
+    # Integrate SMS OTP Gateway (Twilio / Msg91 / Fast2SMS API):
+    # Example: sms_client.send_otp(mobile_number, generated_otp)
+    """
+    data = request.json or {}
+    mobile = data.get('mobile_number', '').strip()
+    otp = data.get('otp', '').strip()
+    
+    if not mobile or len(mobile) < 10:
+        return jsonify({'success': False, 'message': 'Please enter a valid 10-digit mobile number.'}), 400
+
+    if otp in ['1234', '123456']:
+        return jsonify({
+            'success': True,
+            'message': 'Mobile number verified successfully via OTP.',
+            'mobile_number': mobile
+        })
+    else:
+        return jsonify({
+            'success': False,
+            'message': 'Invalid OTP. Please enter demo OTP: 1234'
+        }), 400
+
+@app.route('/api/public/purchase-pass', methods=['POST'])
+def api_public_purchase_pass():
+    """
+    Step 3, 4 & 5: Pass Summary, Payment Simulation & Database Storage
+    Prototype Version: Simulates successful payment and activates pass.
+    
+    # FUTURE PRODUCTION INTEGRATION:
+    # Payment Gateway Integration (Razorpay / Paytm / UPI Webhook):
+    # Razorpay client.order.create(amount=120000, currency="INR", receipt=pass_id)
+    """
+    data = request.json or {}
+    veh_num = data.get('vehicle_number', '').strip().upper()
+    mobile = data.get('mobile_number', '').strip()
+    pass_type = data.get('pass_type', 'Monthly Pass')
+    
+    if not veh_num:
+        return jsonify({'success': False, 'message': 'Vehicle number is required.'}), 400
+
+    settings = get_pricing_settings()
+    price = settings['monthly_pass_price'] # 1200
+    max_trips = settings['monthly_pass_max_trips'] # 25
+    validity_days = settings['monthly_pass_validity_days'] # 30
+
+    start_date = datetime.utcnow()
+    expiry_date = start_date + timedelta(days=validity_days)
+
+    import random, string
+    txn_id = data.get('transaction_id') or f"TXN-2026-{''.join(random.choices(string.digits, k=8))}"
+
+    new_pass = MonthlyPass(
+        vehicle_number=veh_num,
+        mobile_number=mobile,
+        pass_type=pass_type,
+        price=price,
+        max_trips=max_trips,
+        trips_used=0,
+        start_date=start_date,
+        expiry_date=expiry_date,
+        payment_status='Paid',
+        status='Active'
+    )
+    db.session.add(new_pass)
+    db.session.commit()
+
+    return jsonify({
+        'success': True,
+        'message': 'Payment Successful! Monthly Pass Activated Successfully.',
+        'transaction_id': txn_id,
+        'pass': {
+            'pass_id': new_pass.id,
+            'transaction_id': txn_id,
+            'vehicle_number': new_pass.vehicle_number,
+            'mobile_number': new_pass.mobile_number,
+            'pass_type': new_pass.pass_type,
+            'price': new_pass.price,
+            'status': new_pass.status,
+            'trips_remaining': new_pass.remaining_trips(),
+            'total_trips': new_pass.max_trips,
+            'validity': f'{validity_days} Days',
+            'purchase_date': new_pass.start_date.strftime('%d %b %Y %I:%M %p'),
+            'expiry_date': new_pass.expiry_date.strftime('%d %b %Y')
+        }
+    })
 
 # ─── Entry Point ──────────────────────────────────────────────────────────────
 if __name__ == '__main__':

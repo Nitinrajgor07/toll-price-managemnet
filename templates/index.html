@@ -1936,6 +1936,12 @@
           <i data-lucide="indian-rupee"></i>
           <span class="menu-item-text">Dynamic Pricing</span>
         </a>
+        {% if user.role in ('main_admin', 'company_admin') %}
+        <a class="menu-item" data-menu-tab="monthly-pass" data-tooltip="Monthly Pass Management" onclick="showTab('monthly-pass')">
+          <i data-lucide="badge-check"></i>
+          <span class="menu-item-text">Monthly Pass Management</span>
+        </a>
+        {% endif %}
         {% if user.role == 'company_admin' %}
         <a class="menu-item" data-menu-tab="analytics" data-tooltip="AI Analytics" onclick="showTab('analytics')">
           <i data-lucide="brain-circuit"></i>
@@ -2113,27 +2119,6 @@
               </div>
             </div>
 
-            <!-- Sample Scenario Buttons -->
-            <div class="glass-card mb-3">
-              <h6 class="fw-bold mb-2" style="font-size:.82rem;color:var(--muted)"><i data-lucide="zap"
-                  class="me-1 text-warning" style="width:14px;height:14px;vertical-align:middle"></i> QUICK DEMO
-                SCENARIOS — one click, auto-fills & predicts</h6>
-              <div class="d-flex flex-wrap gap-2">
-                <button onclick="runScenario('mondayRush')" class="btn-scenario"
-                  style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);color:#ef4444">
-                  <i data-lucide="sun" class="me-1" style="width:14px;height:14px;"></i> Try Monday Rush
-                </button>
-                <button onclick="runScenario('sundayNight')" class="btn-scenario"
-                  style="background:rgba(34,197,94,0.08);border:1px solid rgba(34,197,94,0.2);color:#22c55e">
-                  <i data-lucide="moon" class="me-1" style="width:14px;height:14px;"></i> Try Sunday Night
-                </button>
-                <button onclick="runScenario('rainyEvening')" class="btn-scenario"
-                  style="background:rgba(234,179,8,0.08);border:1px solid rgba(234,179,8,0.2);color:#eab308">
-                  <i data-lucide="cloud-rain" class="me-1" style="width:14px;height:14px;"></i> Try Rainy Evening
-                </button>
-              </div>
-            </div>
-
             <div class="row g-4">
               <div class="col-lg-5">
                 <div class="glass-card">
@@ -2155,11 +2140,6 @@
                       style="color:var(--accent);font-weight:700">35</span></label>
                   <input type="range" class="form-range mb-3" min="10" max="90" value="35" id="travel_time"
                     oninput="document.getElementById('tt-v').textContent=this.value">
-
-                  <label>Temperature (°C): <span id="temp-v"
-                      style="color:var(--accent);font-weight:700">20</span></label>
-                  <input type="range" class="form-range mb-3" min="-10" max="40" value="20" id="temp_celsius"
-                    oninput="document.getElementById('temp-v').textContent=this.value">
 
                   <div class="row g-2 mb-3">
                     <div class="col-6">
@@ -2184,21 +2164,11 @@
                     </div>
                   </div>
 
-                  <div class="row g-2 mb-4">
-                    <div class="col-6">
-                      <label>Weather</label>
-                      <select class="form-select form-select-sm mt-1" id="weather_encoded">
-                        <option value="0">☀️ Clear</option>
-                        <option value="1">☁️ Cloudy</option>
-                        <option value="2">🌧️ Rain</option>
-                        <option value="3">❄️ Snow</option>
-                        <option value="4">🌫️ Fog</option>
-                      </select>
-                    </div>
-                    <div class="col-6">
-                      <label>Rain (mm/hr)</label>
-                      <input type="number" class="form-control form-control-sm mt-1" id="rain_1h" value="0" min="0"
-                        max="50" step="0.5">
+                  <div class="mb-3">
+                    <label style="font-size:0.82rem;font-weight:600;color:var(--muted)">Vehicle Registration Number (Optional)</label>
+                    <input type="text" id="simVehicleNum" class="form-control form-control-sm mt-1 text-uppercase fw-bold" placeholder="e.g. KA01AB1234" style="letter-spacing:1px;border-radius:8px">
+                    <div style="font-size:0.72rem;color:var(--muted)" class="mt-1">
+                      Checks if vehicle has an active Monthly Pass (25 Trips Included)
                     </div>
                   </div>
 
@@ -2229,19 +2199,8 @@
                 </div>
 
                 <div id="result-area" class="d-none animate-in">
-                  <div class="glass-card mb-3">
+                  <div class="glass-card">
                     <div id="toll-result"></div>
-                  </div>
-                  <!-- Comparison with Fixed Toll -->
-                  <div class="glass-card mb-3">
-                    <h6 class="fw-bold mb-3" style="font-size:.85rem;color:var(--muted)"><i data-lucide="scale"
-                        class="me-2" style="width:16px;height:16px;vertical-align:middle;color:var(--muted)"></i> FIXED
-                      vs DYNAMIC TOLL COMPARISON</h6>
-                    <div id="mini-comparison"></div>
-                    <div class="mt-2 p-2 rounded"
-                      style="background:rgba(34, 197, 94, 0.08);border:1px solid rgba(34, 197, 94, 0.15)">
-                      <span id="savings-text" style="font-size:.85rem;color:var(--green)"></span>
-                    </div>
                   </div>
                 </div>
 
@@ -2530,7 +2489,7 @@
                   <div>
                     <div class="kpi-label">Vehicles Today</div>
                     <div class="kpi-value" id="kpiVehicles">—</div>
-                    <div class="kpi-sub">Across all 12 booths</div>
+                    <div class="kpi-sub" id="kpiSubBooths">Across all 12 booths</div>
                   </div>
                 </div>
               </div>
@@ -2548,7 +2507,7 @@
                   <div>
                     <div class="kpi-label">Active Booths</div>
                     <div class="kpi-value" id="kpiBooths">—</div>
-                    <div class="kpi-sub">Out of 12 total</div>
+                    <div class="kpi-sub" id="kpiOutOfBooths">Out of 12 total</div>
                   </div>
                 </div>
               </div>
@@ -2582,7 +2541,7 @@
                       <div class="section-label">Revenue Operations</div>
                       <h6 class="fw-bold mb-0"><i data-lucide="trending-up"
                           style="width:16px;height:16px;vertical-align:middle;color:#4f7cff;margin-right:6px"></i>Hourly
-                        Revenue Today — All 12 Booths</h6>
+                        Revenue Today — All <span id="revHeadingBooths">12</span> Booths</h6>
                     </div>
                     <div id="revChartTotal" style="font-size:0.78rem;color:var(--muted);font-weight:600"></div>
                   </div>
@@ -2763,61 +2722,151 @@
           <!-- ===== TAB: PRICING ===== -->
           <div id="tab-pricing" class="d-none">
             <div class="glass-card">
-              <h5 class="fw-bold mb-2"><i data-lucide="indian-rupee" class="me-2"
-                  style="width:20px;height:20px;vertical-align:middle;color:#4f7cff"></i> Dynamic Toll Pricing Rules
+              <h5 class="fw-bold mb-4"><i data-lucide="indian-rupee" class="me-2"
+                  style="width:20px;height:20px;vertical-align:middle;color:#4f7cff"></i> Final Toll Pricing Model
               </h5>
-              <p style="color:var(--muted)" class="mb-4">Toll price changes automatically based on ML prediction</p>
-              <table class="table text-center align-middle" style="color:var(--text);border-color:rgba(0,0,0,0.05)">
-                <thead style="background:rgba(0,0,0,0.02)">
-                  <tr>
-                    <th style="border-color:rgba(0,0,0,0.05)">Traffic Volume</th>
-                    <th style="border-color:rgba(0,0,0,0.05)">Avg Speed</th>
-                    <th style="border-color:rgba(0,0,0,0.05)">Congestion</th>
-                    <th style="border-color:rgba(0,0,0,0.05)">Base Toll</th>
-                    <th style="border-color:rgba(0,0,0,0.05)">High Volume</th>
-                    <th style="border-color:rgba(0,0,0,0.05)">Very Slow</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr style="background:rgba(34,197,94,0.03)">
-                    <td style="border-color:rgba(0,0,0,0.05)">&lt; 3500 veh/hr</td>
-                    <td style="border-color:rgba(0,0,0,0.05)">&gt; 60 km/h</td>
-                    <td style="border-color:rgba(0,0,0,0.05)"><span class="badge"
-                        style="background:var(--green);font-size:.9rem;padding:6px 14px">🟢 Low</span></td>
-                    <td style="border-color:rgba(0,0,0,0.05);font-size:1.4rem;font-weight:800;color:var(--green)">₹50
-                    </td>
-                    <td style="border-color:rgba(0,0,0,0.05);color:var(--muted)">₹60 (×1.2)</td>
-                    <td style="border-color:rgba(0,0,0,0.05);color:var(--muted)">₹65 (+₹15)</td>
-                  </tr>
-                  <tr style="background:rgba(234,179,8,0.03)">
-                    <td style="border-color:rgba(0,0,0,0.05)">3500–5000 veh/hr</td>
-                    <td style="border-color:rgba(0,0,0,0.05)">30–60 km/h</td>
-                    <td style="border-color:rgba(0,0,0,0.05)"><span class="badge"
-                        style="background:var(--yellow);color:#000;font-size:.9rem;padding:6px 14px">🟡 Medium</span>
-                    </td>
-                    <td style="border-color:rgba(0,0,0,0.05);font-size:1.4rem;font-weight:800;color:var(--yellow)">₹80
-                    </td>
-                    <td style="border-color:rgba(0,0,0,0.05);color:var(--muted)">₹96 (×1.2)</td>
-                    <td style="border-color:rgba(0,0,0,0.05);color:var(--muted)">₹104 (+₹24)</td>
-                  </tr>
-                  <tr style="background:rgba(239,68,68,0.03)">
-                    <td style="border-color:rgba(0,0,0,0.05)">&gt; 5000 veh/hr</td>
-                    <td style="border-color:rgba(0,0,0,0.05)">&lt; 30 km/h</td>
-                    <td style="border-color:rgba(0,0,0,0.05)"><span class="badge"
-                        style="background:var(--red);font-size:.9rem;padding:6px 14px">🔴 High</span></td>
-                    <td style="border-color:rgba(0,0,0,0.05);font-size:1.4rem;font-weight:800;color:var(--red)">₹120
-                    </td>
-                    <td style="border-color:rgba(0,0,0,0.05);color:var(--muted)">₹180 (×1.5)</td>
-                    <td style="border-color:rgba(0,0,0,0.05);color:var(--muted)">₹216 (+₹36)</td>
-                  </tr>
-                </tbody>
-              </table>
-              <div class="p-3 rounded mt-3"
-                style="background:rgba(79,124,255,0.05);border:1px solid rgba(79,124,255,0.15)">
-                <strong style="color:var(--accent)"><i data-lucide="award" class="me-2 text-primary"
-                    style="width:16px;height:16px;vertical-align:middle"></i> Research Contribution:</strong>
-                <span style="color:var(--muted);font-size:.9rem"> Existing studies predict traffic OR optimize toll.
-                  This system does BOTH — Paper Section 2.4 Research Gap.</span>
+              <div class="table-responsive">
+                <table class="table text-start align-middle mb-0" style="color:var(--text);border-color:rgba(0,0,0,0.05)">
+                  <thead style="background:rgba(0,0,0,0.02)">
+                    <tr>
+                      <th style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-weight:700">Category</th>
+                      <th style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-weight:700">Pricing</th>
+                      <th style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-weight:700">Validity</th>
+                      <th style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-weight:700">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-weight:700">Normal User</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-size:1.05rem;font-weight:800;color:var(--accent)">₹60–₹120 / Trip</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px">Per Trip</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;color:var(--muted)">AI Dynamic Pricing</td>
+                    </tr>
+                    <tr>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-weight:700">Daily User</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-size:1.05rem;font-weight:800;color:var(--green)">₹40–₹90 / Trip</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px">Per Trip</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;color:var(--green);font-weight:600">AI Discount Applied</td>
+                    </tr>
+                    <tr>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-weight:700">Monthly Pass</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-size:1.05rem;font-weight:800;color:var(--accent2)">₹1,200</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px">30 Days / 25 Trips</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;color:var(--muted)">Trips 26+ charged using AI Dynamic Pricing</td>
+                    </tr>
+                    <tr>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-weight:700">Emergency Vehicle</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-size:1.05rem;font-weight:800;color:var(--red)">₹0</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px">Unlimited</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;color:var(--red);font-weight:600">Toll Exempt</td>
+                    </tr>
+                    <tr>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-weight:700">Government / VIP</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;font-size:1.05rem;font-weight:800;color:var(--yellow)">Policy Based</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px">As Configured</td>
+                      <td style="border-color:rgba(0,0,0,0.05);padding:14px 16px;color:var(--muted)">Admin Controlled</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+
+          <!-- ===== TAB: MONTHLY PASS MANAGEMENT ===== -->
+          <div id="tab-monthly-pass" class="d-none">
+            <div class="glass-card">
+              <!-- Summary KPI Cards -->
+              <div class="row g-3 mb-4">
+                <div class="col-sm-6 col-xl-3">
+                  <div class="p-3 rounded h-100" style="background:rgba(79,124,255,0.06);border:1px solid rgba(79,124,255,0.15)">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <span style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase">Total Monthly Passes</span>
+                      <i data-lucide="badge-check" style="width:18px;height:18px;color:var(--accent)"></i>
+                    </div>
+                    <div class="fw-bold fs-3 text-primary" id="mpCardTotal">0</div>
+                    <div style="font-size:0.75rem;color:var(--muted)" class="mt-1">Registered in database</div>
+                  </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                  <div class="p-3 rounded h-100" style="background:rgba(34,197,94,0.06);border:1px solid rgba(34,197,94,0.15)">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <span style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase">Active Passes</span>
+                      <i data-lucide="check-circle" style="width:18px;height:18px;color:var(--green)"></i>
+                    </div>
+                    <div class="fw-bold fs-3 text-success" id="mpCardActive">0</div>
+                    <div style="font-size:0.75rem;color:var(--green)" class="mt-1">Valid &amp; trips available</div>
+                  </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                  <div class="p-3 rounded h-100" style="background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.15)">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <span style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase">Expired Passes</span>
+                      <i data-lucide="alert-circle" style="width:18px;height:18px;color:var(--red)"></i>
+                    </div>
+                    <div class="fw-bold fs-3 text-danger" id="mpCardExpired">0</div>
+                    <div style="font-size:0.75rem;color:var(--muted)" class="mt-1">Exhausted or past 30 days</div>
+                  </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                  <div class="p-3 rounded h-100" style="background:rgba(124,92,255,0.06);border:1px solid rgba(124,92,255,0.15)">
+                    <div class="d-flex align-items-center justify-content-between mb-2">
+                      <span style="font-size:0.75rem;font-weight:700;color:var(--muted);text-transform:uppercase">Total Pass Revenue</span>
+                      <i data-lucide="indian-rupee" style="width:18px;height:18px;color:var(--accent2)"></i>
+                    </div>
+                    <div class="fw-bold fs-3" style="color:var(--accent2)" id="mpCardRevenue">₹0</div>
+                    <div style="font-size:0.75rem;color:var(--muted)" class="mt-1">Collected from subscriptions</div>
+                  </div>
+                </div>
+              </div>
+
+              <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-3">
+                <div>
+                  <h5 class="fw-bold mb-1"><i data-lucide="badge-check" class="me-2 text-primary"
+                      style="width:22px;height:22px;vertical-align:middle"></i> Monthly Pass Management</h5>
+                  <p style="color:var(--muted);font-size:0.88rem" class="mb-0">Manage and track all registered vehicle monthly passes across national highway tolls</p>
+                </div>
+                <div class="d-flex gap-2 flex-wrap align-items-center">
+                  <div style="min-width:200px">
+                    <div class="input-group">
+                      <span class="input-group-text bg-white border-end-0"><i data-lucide="search" style="width:16px;height:16px;color:var(--muted)"></i></span>
+                      <input type="text" id="passSearchInput" class="form-control border-start-0" placeholder="Search by Vehicle Number..." oninput="loadMonthlyPassesTable()">
+                    </div>
+                  </div>
+                  <div>
+                    <select id="passStatusFilter" class="form-select" onchange="loadMonthlyPassesTable()" style="border-radius:10px;font-size:0.85rem;font-weight:600">
+                      <option value="All">All Pass Statuses</option>
+                      <option value="Active">Active</option>
+                      <option value="Expired">Expired</option>
+                    </select>
+                  </div>
+                  <div>
+                    <select id="passPaymentFilter" class="form-select" onchange="loadMonthlyPassesTable()" style="border-radius:10px;font-size:0.85rem;font-weight:600">
+                      <option value="All">All Payment Statuses</option>
+                      <option value="Paid">Paid</option>
+                      <option value="Pending">Pending</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+
+              <div class="table-responsive">
+                <table class="table text-start align-middle" style="color:var(--text);border-color:rgba(0,0,0,0.05)">
+                  <thead style="background:rgba(0,0,0,0.02)">
+                    <tr>
+                      <th style="border-color:rgba(0,0,0,0.05)">Vehicle Number</th>
+                      <th style="border-color:rgba(0,0,0,0.05)">Pass Status</th>
+                      <th style="border-color:rgba(0,0,0,0.05)">Total Trips</th>
+                      <th style="border-color:rgba(0,0,0,0.05)">Remaining Trips</th>
+                      <th style="border-color:rgba(0,0,0,0.05)">Purchase Date</th>
+                      <th style="border-color:rgba(0,0,0,0.05)">Expiry Date</th>
+                      <th style="border-color:rgba(0,0,0,0.05)">Payment Status</th>
+                      <th style="border-color:rgba(0,0,0,0.05);text-align:center">Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="monthlyPassesTableBody">
+                    <tr><td colspan="8" class="text-center py-4 text-muted">Loading monthly passes...</td></tr>
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>
@@ -3625,12 +3674,13 @@
 
   <script>
     const userRole = '{{ user.role }}';
-    const allTabs = ['simulator', 'map', 'history', 'dashboard', 'comparison', 'pricing', 'metrics', 'analytics', 'users', 'settings', 'profile', 'highways', 'admin_dashboard', 'receipts'];
+    const allTabs = ['simulator', 'map', 'history', 'dashboard', 'comparison', 'pricing', 'metrics', 'analytics', 'users', 'settings', 'profile', 'highways', 'admin_dashboard', 'receipts', 'monthly-pass'];
     let dashLoaded = false, charts = {};
     let mapLoaded = false, mapInterval = null;
 
     // Dynamic Header Page Titles mapping
     const tabTitles = {
+      'monthly-pass': 'Monthly Pass Management',
       receipts: 'Generate Receipts',
       admin_dashboard: 'Admin Control Center',
       dashboard: 'Dashboard Overview',
@@ -3656,6 +3706,7 @@
 
       const weatherSelect = document.getElementById('weather_encoded');
       const rainInput = document.getElementById('rain_1h');
+      if (!weatherSelect || !rainInput) return;
 
       if (isNight) {
         weatherSelect.value = rand > 0.8 ? 4 : 0;
@@ -3883,6 +3934,7 @@
       if (tab === 'history') loadHistoryLog();
       if (tab === 'settings') loadSettings();
       if (tab === 'admin_dashboard') loadAdminCenter();
+      if (tab === 'monthly-pass') loadMonthlyPassesTable();
     }
 
     // ── Admin Center Actions ──
@@ -4113,15 +4165,21 @@
     }
 
     async function predict() {
+      const vehEl = document.getElementById('simVehicleNum');
+      const tempEl = document.getElementById('temp_celsius');
+      const rainEl = document.getElementById('rain_1h');
+      const weatherEl = document.getElementById('weather_encoded');
+
       const payload = {
         hour: parseInt(document.getElementById('hour').value),
         day_of_week: parseInt(document.getElementById('day_of_week').value),
         traffic_volume: parseInt(document.getElementById('traffic_volume').value),
         avg_speed: parseFloat(document.getElementById('avg_speed').value),
         travel_time: parseFloat(document.getElementById('travel_time').value),
-        temp_celsius: parseFloat(document.getElementById('temp_celsius').value),
-        rain_1h: parseFloat(document.getElementById('rain_1h').value),
-        weather_encoded: parseInt(document.getElementById('weather_encoded').value),
+        temp_celsius: tempEl ? parseFloat(tempEl.value) : 20.0,
+        rain_1h: rainEl ? parseFloat(rainEl.value) : 0.0,
+        weather_encoded: weatherEl ? parseInt(weatherEl.value) : 0,
+        vehicle_number: vehEl ? vehEl.value.trim() : ''
       };
 
       const res = await fetch('/predict', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
@@ -4142,53 +4200,164 @@
         High: '<i data-lucide="alert-triangle" class="me-1" style="width:16px;height:16px;vertical-align:middle;display:inline-block"></i>'
       };
 
+      const pi = data.pass_info || {};
+      let cat = pi.detected_category;
+      if (!cat) {
+        if (pi.has_pass) {
+          cat = (pi.remaining_trips > 0) ? 'monthly_active' : 'monthly_exhausted';
+        } else if (pi.category === 'Daily User') {
+          cat = 'daily';
+        } else {
+          cat = 'normal';
+        }
+      }
+
+      let topCardLabel = 'Recommended Dynamic Toll Price';
+      let topCardAmount = `₹${data.toll_price}`;
+      let topCardExtra = '';
+
+      let singleCategoryCard = '';
+      if (cat === 'monthly_active') {
+        topCardLabel = 'Current Toll Charge';
+        topCardAmount = '₹0';
+        topCardExtra = `
+          <div class="mt-1">
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 fw-bold" style="font-size:0.75rem">Monthly Pass Applied</span>
+          </div>
+          <div style="font-size:0.75rem;color:var(--muted);margin-top:4px">AI Toll ₹${data.toll_price} covered by Monthly Pass.</div>
+        `;
+        singleCategoryCard = `
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <span style="font-size:0.85rem;font-weight:700">Vehicle Category</span>
+            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 fw-bold">Monthly Pass User</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span style="font-size:0.82rem;color:var(--muted)">Pass Status</span>
+            <span class="badge bg-success px-2 py-1">Active</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span style="font-size:0.82rem;color:var(--muted)">AI Recommended Toll</span>
+            <span style="font-weight:700;color:var(--text)">₹${data.toll_price}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom text-success">
+            <span style="font-size:0.82rem;font-weight:600">Monthly Pass Benefit</span>
+            <span style="font-weight:800;font-size:0.95rem">-₹${data.toll_price}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span style="font-size:0.82rem;color:var(--muted)">Remaining Trips</span>
+            <span style="font-weight:800;color:var(--green)">${pi.remaining_trips || 0} / ${pi.total_trips || 25}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size:0.88rem;font-weight:700;color:var(--text)">Final Charge</span>
+            <span class="fw-black fs-4 text-success" style="font-weight:900">₹0</span>
+          </div>
+        `;
+      } else if (cat === 'monthly_exhausted') {
+        topCardLabel = 'Recommended Dynamic Toll Price';
+        topCardAmount = `₹${data.toll_price}`;
+        singleCategoryCard = `
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <span style="font-size:0.85rem;font-weight:700">Vehicle Category</span>
+            <span class="badge bg-warning-subtle text-warning border border-warning-subtle px-3 py-1 fw-bold">Monthly Pass User</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span style="font-size:0.82rem;color:var(--muted)">Pass Status</span>
+            <span class="badge bg-danger px-2 py-1">Trips Exhausted</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span style="font-size:0.82rem;color:var(--muted)">AI Recommended Toll</span>
+            <span style="font-weight:700;color:var(--text)">₹${data.toll_price}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom text-muted">
+            <span style="font-size:0.82rem">Monthly Pass Benefit</span>
+            <span style="font-weight:600">₹0 (No Pass Discount)</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size:0.88rem;font-weight:700;color:var(--text)">Final Charge</span>
+            <span class="fw-black fs-4 text-danger" style="font-weight:900">₹${data.toll_price}</span>
+          </div>
+        `;
+      } else if (cat === 'daily') {
+        topCardLabel = 'Recommended Dynamic Toll Price';
+        topCardAmount = `₹${data.daily_commuter_toll}`;
+        singleCategoryCard = `
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <span style="font-size:0.85rem;font-weight:700">Vehicle Category</span>
+            <span class="badge bg-primary-subtle text-primary border px-3 py-1 fw-bold">Daily User</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span style="font-size:0.82rem;color:var(--muted)">Pass Status</span>
+            <span style="font-size:0.82rem;color:var(--accent);font-weight:600">Daily Commuter Rate Applied</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span style="font-size:0.82rem;color:var(--muted)">AI Recommended Toll</span>
+            <span style="font-weight:700;color:var(--text)">₹${data.toll_price}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom text-primary">
+            <span style="font-size:0.82rem;font-weight:600">Daily Commuter Discount</span>
+            <span style="font-weight:800;font-size:0.95rem">-₹${data.daily_discount}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size:0.88rem;font-weight:700;color:var(--text)">Final Charge</span>
+            <span class="fw-black fs-4 text-primary" style="font-weight:900">₹${data.daily_commuter_toll}</span>
+          </div>
+        `;
+      } else {
+        topCardLabel = 'Recommended Dynamic Toll Price';
+        topCardAmount = `₹${data.toll_price}`;
+        singleCategoryCard = `
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-2 border-bottom">
+            <span style="font-size:0.85rem;font-weight:700">Vehicle Category</span>
+            <span class="badge bg-secondary-subtle text-dark border px-3 py-1 fw-bold">Normal User</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span style="font-size:0.82rem;color:var(--muted)">Pass Status</span>
+            <span style="font-size:0.82rem;color:var(--muted);font-weight:600">No Active Pass Found</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center mb-2 pb-1 border-bottom">
+            <span style="font-size:0.82rem;color:var(--muted)">AI Recommended Toll</span>
+            <span style="font-weight:700;color:var(--text)">₹${data.toll_price}</span>
+          </div>
+          <div class="d-flex justify-content-between align-items-center">
+            <span style="font-size:0.88rem;font-weight:700;color:var(--text)">Final Charge</span>
+            <span class="fw-black fs-4 text-primary" style="font-weight:900">₹${data.toll_price}</span>
+          </div>
+        `;
+      }
+
       document.getElementById('toll-result').innerHTML = `
     <div class="result-box" style="background:${bgMap[c]};border:1px solid ${bdMap[c]}">
       <div style="color:var(--muted);font-size:.82rem;margin-bottom:.5rem">PREDICTED CONGESTION LEVEL</div>
       <div class="congestion-badge" style="background:${bgMap[c]};border:1px solid ${bdMap[c]};color:${clMap[c]}">
         ${iconMap[data.congestion]} <span>${data.congestion}</span>
       </div>
-      <div style="color:var(--muted);font-size:.82rem;margin-bottom:.25rem">RECOMMENDED TOLL PRICE</div>
-      <div class="toll-amount" style="color:${clMap[c]}">₹${data.toll_price}</div>
+      <div style="color:var(--muted);font-size:.82rem;margin-bottom:.25rem;font-weight:700">${topCardLabel}</div>
+      <div class="toll-amount" style="color:${clMap[c]}">${topCardAmount}</div>
+      ${topCardExtra}
       <div style="color:var(--muted);font-size:.82rem;margin-top:.5rem">Model Confidence: <strong style="color:${clMap[c]}">${data.confidence}%</strong></div>
     </div>
-    <div class="mt-3">
+    
+    <!-- Customer Category Pricing Breakdown -->
+    <div class="mt-3 p-3 rounded text-start" style="background:rgba(255,255,255,0.85);border:1px solid rgba(0,0,0,0.08)">
+      <div style="font-size:0.75rem;font-weight:800;color:var(--muted);letter-spacing:0.5px" class="mb-3 text-uppercase border-bottom pb-2">
+        Customer Category Fare Breakdown
+      </div>
+      ${singleCategoryCard}
+    </div>
+
+    <div class="mt-3 text-start">
       <div class="mb-1" style="font-size:.8rem;color:var(--muted)">PREDICTION CONFIDENCE BREAKDOWN</div>
       ${mkBar('🟢 Low', data.proba.Low, 'var(--green)')}
       ${mkBar('🟡 Medium', data.proba.Medium, 'var(--yellow)')}
       ${mkBar('🔴 High', data.proba.High, 'var(--red)')}
-    </div>`;
-
-      // Mini comparison
-      const fixedToll = 80;
-      const dynToll = data.toll_price;
-      const diff = dynToll - fixedToll;
-      document.getElementById('mini-comparison').innerHTML = `
-    <div class="mb-2">
-      <div style="font-size:.78rem;color:var(--muted);margin-bottom:4px">Fixed Toll System (Old)</div>
-      <div class="comp-bar" style="background:rgba(100,116,139,0.1);width:${(fixedToll / 216) * 100}%;color:var(--text)">₹${fixedToll}</div>
     </div>
-    <div>
-      <div style="font-size:.78rem;color:var(--muted);margin-bottom:4px">Dynamic Toll System (This Project)</div>
-      <div class="comp-bar" style="background:${bgMap[c]};border:1px solid ${bdMap[c]};width:${(dynToll / 216) * 100}%;color:${clMap[c]}">₹${dynToll}</div>
-    </div>`;
 
-      if (diff > 0) {
-        document.getElementById('savings-text').textContent = `⬆️ Dynamic system charges ₹${diff} more during high traffic — discourages rush hour travel!`;
-        document.getElementById('savings-text').parentNode.style.background = 'rgba(239,68,68,0.08)';
-        document.getElementById('savings-text').parentNode.style.borderColor = 'rgba(239,68,68,0.15)';
-        document.getElementById('savings-text').style.color = 'var(--red)';
-      } else if (diff < 0) {
-        document.getElementById('savings-text').textContent = `⬇️ Dynamic system saves ₹${Math.abs(diff)} during low traffic — encourages road usage!`;
-        document.getElementById('savings-text').parentNode.style.background = 'rgba(34,197,94,0.08)';
-        document.getElementById('savings-text').parentNode.style.borderColor = 'rgba(34,197,94,0.15)';
-        document.getElementById('savings-text').style.color = 'var(--green)';
-      } else {
-        document.getElementById('savings-text').textContent = `= Same price as fixed toll — medium traffic conditions`;
-        document.getElementById('savings-text').parentNode.style.background = 'rgba(234,179,8,0.08)';
-        document.getElementById('savings-text').parentNode.style.borderColor = 'rgba(234,179,8,0.15)';
-        document.getElementById('savings-text').style.color = 'var(--yellow)';
-      }
+    <!-- STEP 2: Show "Simulate Toll Crossing" button after prediction -->
+    <div class="mt-3" id="simCrossingBtnWrap">
+      <button id="btnSimulateCrossing" class="btn btn-success btn-lg w-100 fw-bold shadow-sm py-3" style="border-radius:14px;font-size:1.05rem;letter-spacing:0.3px" onclick="simulateTollCrossing()">
+        🚗 Simulate Toll Crossing
+      </button>
+    </div>`;
 
       // Re-generate Lucide icons for results
       lucide.createIcons();
@@ -4199,6 +4368,152 @@
     // ===== PREDICTION HISTORY =====
     function addToHistory(payload, data) {
       loadHistoryLog();
+    }
+
+    // ===== STEP 3 & STEP 5: SIMULATE TOLL CROSSING & DEDUCT TRIP =====
+    async function simulateTollCrossing() {
+      const btn = document.getElementById('btnSimulateCrossing');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> 🚗 Vehicle Reaching Toll Plaza...';
+      }
+
+      const resultBox = document.getElementById('toll-result');
+      const animDiv = document.createElement('div');
+      animDiv.id = 'crossingAnimStatus';
+      animDiv.className = 'glass-card mt-3 p-4 text-start animate-in';
+      animDiv.style.background = 'rgba(255, 255, 255, 0.95)';
+      animDiv.style.border = '1px solid rgba(79, 124, 255, 0.3)';
+      animDiv.innerHTML = `
+        <div class="fw-bold mb-3 text-primary d-flex align-items-center gap-2">
+          <i data-lucide="loader" style="width:20px;height:20px;animation:spin 1s linear infinite"></i>
+          <span>Toll Plaza Gate Operation in Progress...</span>
+        </div>
+        <div class="d-flex flex-column gap-2" style="font-size:0.85rem">
+          <div id="step1" class="py-1 text-primary fw-bold">⏳ 1. Checking Pass &amp; Vehicle Database...</div>
+          <div id="step2" class="py-1 text-muted d-none">✅ 2. Vehicle Verified &amp; Pass Found</div>
+          <div id="step3" class="py-1 text-muted d-none">🚗 3. Barrier Gate Opening...</div>
+          <div id="step4" class="py-1 text-muted d-none">📋 4. Toll Transaction Recorded</div>
+          <div id="step5" class="py-1 text-muted d-none">💾 5. Database Updated Successfully</div>
+        </div>
+      `;
+      resultBox.appendChild(animDiv);
+      lucide.createIcons();
+
+      setTimeout(() => {
+        const s2 = document.getElementById('step2');
+        if (s2) s2.classList.remove('d-none');
+      }, 400);
+
+      setTimeout(() => {
+        const s3 = document.getElementById('step3');
+        if (s3) s3.classList.remove('d-none');
+      }, 800);
+
+      setTimeout(() => {
+        const s4 = document.getElementById('step4');
+        if (s4) s4.classList.remove('d-none');
+      }, 1200);
+
+      setTimeout(async () => {
+        const s5 = document.getElementById('step5');
+        if (s5) s5.classList.remove('d-none');
+
+        const vehEl = document.getElementById('simVehicleNum');
+        const payload = {
+          hour: parseInt(document.getElementById('hour').value),
+          day_of_week: parseInt(document.getElementById('day_of_week').value),
+          traffic_volume: parseInt(document.getElementById('traffic_volume').value),
+          avg_speed: parseFloat(document.getElementById('avg_speed').value),
+          travel_time: parseFloat(document.getElementById('travel_time').value),
+          temp_celsius: document.getElementById('temp_celsius') ? parseFloat(document.getElementById('temp_celsius').value) : 20.0,
+          rain_1h: document.getElementById('rain_1h') ? parseFloat(document.getElementById('rain_1h').value) : 0.0,
+          weather_encoded: document.getElementById('weather_encoded') ? parseInt(document.getElementById('weather_encoded').value) : 0,
+          vehicle_number: vehEl ? vehEl.value.trim() : ''
+        };
+
+        try {
+          const res = await fetch('/api/simulate-crossing', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+
+          // STEP 5: Crossing Completed Screen
+          resultBox.innerHTML = `
+            <div class="glass-card p-4 text-start animate-in" style="background:rgba(255,255,255,0.98);border:2px solid rgba(34,197,94,0.4);border-radius:20px;box-shadow:0 10px 40px rgba(34,197,94,0.1)">
+              <div class="text-center mb-3">
+                <div class="d-inline-flex align-items-center justify-content-center p-3 rounded-circle bg-success-subtle text-success mb-2">
+                  <i data-lucide="check-circle-2" style="width:38px;height:38px"></i>
+                </div>
+                <h4 class="fw-bold text-success mb-1">✔ Toll Crossing Successful</h4>
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 fw-bold" style="font-size:0.78rem">Database Updated Successfully</span>
+              </div>
+              
+              <div class="p-3 rounded mb-3" style="background:rgba(0,0,0,0.02);border:1px solid rgba(0,0,0,0.06);font-size:0.88rem">
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                  <span style="color:var(--muted);font-weight:600">Vehicle Number</span>
+                  <strong class="text-primary fs-6">${data.vehicle_number}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                  <span style="color:var(--muted);font-weight:600">Traffic Level</span>
+                  <strong>${data.traffic_level}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                  <span style="color:var(--muted);font-weight:600">AI Toll</span>
+                  <strong>₹${data.ai_toll}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                  <span style="color:var(--muted);font-weight:600">Vehicle Category</span>
+                  <strong>${data.vehicle_category}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                  <span style="color:var(--muted);font-weight:600">Monthly Pass Used</span>
+                  <strong class="${data.monthly_pass_used === 'YES' ? 'text-success' : 'text-dark'}">${data.monthly_pass_used}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                  <span style="color:var(--muted);font-weight:600">Trip Deducted</span>
+                  <strong class="${data.trip_deducted === 'YES' ? 'text-success' : 'text-dark'}">${data.trip_deducted}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                  <span style="color:var(--muted);font-weight:600">Remaining Trips</span>
+                  <strong class="${data.monthly_pass_used === 'YES' ? 'text-success' : 'text-muted'}">${data.monthly_pass_used === 'YES' ? data.remaining_trips + ' / ' + data.total_trips : 'N/A'}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2 border-bottom">
+                  <span style="color:var(--muted);font-weight:600">Current Charge</span>
+                  <strong class="fs-5 ${data.current_charge === 0 ? 'text-success' : 'text-primary'}" style="font-weight:900">₹${data.current_charge}</strong>
+                </div>
+                <div class="d-flex justify-content-between py-2">
+                  <span style="color:var(--muted);font-weight:600">Date &amp; Time</span>
+                  <span style="color:var(--muted);font-size:0.82rem">${data.date_time}</span>
+                </div>
+              </div>
+
+              <button class="btn btn-primary btn-lg w-100 fw-bold py-3" onclick="resetSimulatorView()" style="border-radius:12px;font-size:1rem">
+                Return to Dashboard
+              </button>
+            </div>
+          `;
+          lucide.createIcons();
+
+          // Refresh Monthly Pass Management table, History logs, and KPIs
+          if (typeof loadMonthlyPassesTable === 'function') loadMonthlyPassesTable();
+          if (typeof loadHistoryLog === 'function') loadHistoryLog();
+          if (typeof loadKPIs === 'function') loadKPIs();
+
+          showToast('success', 'Toll Crossing Recorded', `Vehicle ${data.vehicle_number} passed toll plaza. Charge: ₹${data.current_charge}`);
+        } catch (e) {
+          showToast('error', 'Error', 'Error processing toll crossing simulation.');
+        }
+      }, 1600);
+    }
+
+    function resetSimulatorView() {
+      document.getElementById('result-area').classList.add('d-none');
+      document.getElementById('result-placeholder').classList.remove('d-none');
+      const vehEl = document.getElementById('simVehicleNum');
+      if (vehEl) vehEl.value = '';
     }
 
     function clearHistory() {
@@ -4489,7 +4804,7 @@
     // ── Load KPI Strip ──
     let kpiCharts = {};
     async function loadKPIs() {
-      if (userRole !== 'company_admin') return;
+      if (userRole !== 'company_admin' && userRole !== 'main_admin') return;
       try {
         const res = await fetch('/api/dashboard-kpis');
         const data = await res.json();
@@ -4501,9 +4816,17 @@
         document.getElementById('kpiVehicles').textContent = fmtNum(data.vehicles_today);
         const hourNow = data.current_hour || 1;
         document.getElementById('kpiVehRate').textContent = fmtNum(Math.round(data.vehicles_today / (hourNow || 1))) + '/hr';
-        document.getElementById('kpiBooths').textContent = data.active_booths + '/12';
+        const activeCount = Math.min(data.active_booths || 0, data.total_booths || 12);
+        const totalCount = data.total_booths || 12;
+        document.getElementById('kpiBooths').textContent = activeCount + '/' + totalCount;
         document.getElementById('kpiHighCong').textContent = data.high_congestion_booths + ' High';
         document.getElementById('kpiAvgToll').textContent = '₹' + data.avg_toll;
+        const subBoothsEl = document.getElementById('kpiSubBooths');
+        if (subBoothsEl) subBoothsEl.textContent = 'Across all ' + totalCount + ' booths';
+        const outOfBoothsEl = document.getElementById('kpiOutOfBooths');
+        if (outOfBoothsEl) outOfBoothsEl.textContent = 'Out of ' + totalCount + ' total';
+        const revHeadingEl = document.getElementById('revHeadingBooths');
+        if (revHeadingEl) revHeadingEl.textContent = totalCount;
 
         // Re-render lucide after DOM update
         lucide.createIcons();
@@ -4533,7 +4856,7 @@
           { label: 'Today\'s Revenue', val: fmtRevenue(data.today_revenue), color: '#4f7cff' },
           { label: 'Vehicles Processed', val: fmtNum(data.vehicles_today), color: '#22c55e' },
           { label: 'Avg. Dynamic Toll', val: '₹' + data.avg_toll, color: '#d97706' },
-          { label: 'Active Booths', val: data.active_booths + ' / 12', color: '#7c5cff' },
+          { label: 'Active Booths', val: activeCount + ' / ' + totalCount, color: '#7c5cff' },
           { label: 'High Congestion Now', val: data.high_congestion_booths + ' booths', color: '#ef4444' },
           { label: 'Monthly Projection', val: fmtRevenue(data.monthly_revenue), color: '#0ea5e9' },
         ].map(m => `
@@ -4968,6 +5291,7 @@
         if (data.success) {
           cancelBoothEdit();
           loadBoothGrid();
+          loadKPIs();
         }
       } catch (e) { showToast('error', 'Error', 'Error saving toll booth.'); }
     }
@@ -4978,7 +5302,10 @@
         const res = await fetch('/api/booths/' + id, { method: 'DELETE' });
         const data = await res.json();
         showToast(data.success ? 'success' : 'error', data.success ? 'Booth Deleted' : 'Delete Failed', data.message || 'Booth deleted.');
-        loadBoothGrid();
+        if (data.success) {
+          loadBoothGrid();
+          loadKPIs();
+        }
       } catch (e) { showToast('error', 'Error', 'Error deleting booth.'); }
     }
 
@@ -5324,6 +5651,100 @@
       }
     }
 
+    async function loadMonthlyPassesTable() {
+      const tbody = document.getElementById('monthlyPassesTableBody');
+      if (!tbody) return;
+
+      const searchInput = document.getElementById('passSearchInput');
+      const statusSelect = document.getElementById('passStatusFilter');
+      const paymentSelect = document.getElementById('passPaymentFilter');
+
+      const searchQuery = searchInput ? searchInput.value.trim() : '';
+      const statusVal = statusSelect ? statusSelect.value : 'All';
+      const paymentVal = paymentSelect ? paymentSelect.value : 'All';
+
+      try {
+        const url = `/api/admin/monthly-passes?search=${encodeURIComponent(searchQuery)}&status=${encodeURIComponent(statusVal)}&payment_status=${encodeURIComponent(paymentVal)}`;
+        const res = await fetch(url);
+        const data = await res.json();
+
+        if (data.summary) {
+          const s = data.summary;
+          const totEl = document.getElementById('mpCardTotal');
+          const actEl = document.getElementById('mpCardActive');
+          const expEl = document.getElementById('mpCardExpired');
+          const revEl = document.getElementById('mpCardRevenue');
+          if (totEl) totEl.textContent = s.total_passes;
+          if (actEl) actEl.textContent = s.active_passes;
+          if (expEl) expEl.textContent = s.expired_passes;
+          if (revEl) revEl.textContent = '₹' + s.total_revenue.toLocaleString('en-IN');
+        }
+
+        if (!data.passes || data.passes.length === 0) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="8" class="text-center py-5">
+                <div class="py-3">
+                  <i data-lucide="badge-x" style="width:48px;height:48px;color:var(--muted);opacity:0.4" class="mb-3"></i>
+                  <h5 class="fw-bold text-dark mb-1">No Monthly Passes Found</h5>
+                  <p style="color:var(--muted);font-size:0.88rem" class="mb-0">Purchased passes will appear here automatically.</p>
+                </div>
+              </td>
+            </tr>
+          `;
+          lucide.createIcons();
+          return;
+        }
+
+        tbody.innerHTML = data.passes.map(p => {
+          const statusBadgeClass = p.status === 'Active' ? 'bg-success' : (p.status === 'Exhausted' ? 'bg-warning text-dark' : 'bg-danger');
+          const remainingClass = p.remaining_trips > 0 ? 'text-success fw-bold' : 'text-danger fw-bold';
+          
+          return `
+            <tr>
+              <td style="border-color:rgba(0,0,0,0.05);font-weight:700" class="text-primary">${p.vehicle_number}</td>
+              <td style="border-color:rgba(0,0,0,0.05)">
+                <span class="badge ${statusBadgeClass} px-3 py-1" style="border-radius:6px">${p.status}</span>
+              </td>
+              <td style="border-color:rgba(0,0,0,0.05);font-weight:600">${p.total_trips} Trips</td>
+              <td style="border-color:rgba(0,0,0,0.05)" class="${remainingClass}">${p.remaining_trips} / ${p.total_trips}</td>
+              <td style="border-color:rgba(0,0,0,0.05);color:var(--muted);font-size:0.82rem">${p.purchase_date}</td>
+              <td style="border-color:rgba(0,0,0,0.05);color:var(--muted);font-size:0.82rem">${p.expiry_date}</td>
+              <td style="border-color:rgba(0,0,0,0.05)">
+                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1" style="border-radius:6px">${p.payment_status}</span>
+              </td>
+              <td style="border-color:rgba(0,0,0,0.05);text-align:center">
+                <button onclick="deleteMonthlyPass(${p.id}, '${p.vehicle_number}')" class="btn btn-sm btn-outline-danger px-3 py-1 d-inline-flex align-items-center gap-1" style="border-radius:8px;font-size:0.75rem;font-weight:600">
+                  <i data-lucide="trash-2" style="width:14px;height:14px"></i> Delete
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+        lucide.createIcons();
+      } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center py-4 text-danger">Error loading monthly passes.</td></tr>`;
+      }
+    }
+
+    async function deleteMonthlyPass(id, vehNum) {
+      if (!confirm(`Are you sure you want to delete the monthly pass for vehicle ${vehNum}?`)) return;
+      try {
+        const res = await fetch(`/api/admin/monthly-passes/${id}`, { method: 'DELETE' });
+        const data = await res.json();
+        showToast(data.success ? 'success' : 'error', data.success ? 'Pass Deleted' : 'Delete Failed', data.message);
+        if (data.success) {
+          loadMonthlyPassesTable();
+        }
+      } catch (e) {
+        showToast('error', 'Error', 'Error deleting monthly pass.');
+      }
+    }
+
+    window.deleteMonthlyPass = deleteMonthlyPass;
+
+    window.loadMonthlyPassesTable = loadMonthlyPassesTable;
+
     function renderReceiptsPagination(totalPages) {
       const pag = document.getElementById('receiptsPagination');
       if (!pag) return;
@@ -5471,6 +5892,9 @@
         loadReceiptsList();
         loadReceiptsSummary();
         populateTollPlazas();
+      }
+      if (tabName === 'monthly-pass') {
+        loadMonthlyPassesTable();
       }
       if (history.pushState) {
         if (tabName === 'simulator') {
